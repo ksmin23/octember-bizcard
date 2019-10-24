@@ -8,6 +8,8 @@ import urllib.parse
 import re
 import base64
 import traceback
+import datetime
+import hashlib
 
 import boto3
 
@@ -26,7 +28,8 @@ def parse_textract_data(lines):
     return s if score >= 3 else ''
 
   def _get_phone_number(s):
-    phone_number_re = re.compile(r'(?:\+ *)?\d[\d\- ]{7,}\d')
+    #phone_number_re = re.compile(r'(?:\+ *)?\d[\d\- ]{7,}\d')
+    phone_number_re = re.compile(r'\({0,1}\+{0,1}[\d ]*[\d]{2,}\){0,1}[\d\- ]{7,}')
     phones = phone_number_re.findall(s)
     #print('phone', phones)
     return phones[0] if phones else ''
@@ -116,7 +119,6 @@ def lambda_handler(event, context):
     print('[ERROR] getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, bucket))
     raise ex
 
-
 def lambda_handler_for_kinesis_event(event, context):
   import collections
 
@@ -132,12 +134,21 @@ def lambda_handler_for_kinesis_event(event, context):
       bucket, key = (json_data['s3_bucket'], json_data['s3_key'])
       detected_text = get_textract_data(bucket, key)
       doc = parse_textract_data(detected_text)
-      owner = os.path.basename(key).split('_')[0] 
+
+      doc['doc_id'] = hashlib.md5(os.path.basename(key).encode('utf-8')).hexdigest()[:8]
+      doc['created_at'] = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+      doc['is_alive'] = True
+
+      #XXX: deduplicate contents
+      content_id = ':'.join('{}'.format(doc.get(k, '').lower()) for k in ('name', 'email', 'phone_number'))
+      doc['content_id'] = hashlib.md5(content_id.encode('utf-8')).hexdigest()[:8]
+
+      owner = os.path.basename(key).split('_')[0]
       text_data = {'s3_bucket': bucket, 's3_key': key, 'owner': owner, 'data': doc}
       #TODO: send records to kinesis
       #write_records_to_kinesis([text_data], kinesis_stream_name)
       counter['writes'] += 1
-      return text_data 
+      return text_data
     except Exception as ex:
       counter['errors'] += 1
       print('[ERROR] getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, bucket), file=sys.stderr)
@@ -260,14 +271,14 @@ def test3():
   key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
   record = {'s3_bucket': bucket, 's3_key': key}
   records = [record]
-  kinesis_stream_name = 'octemeber-biz-card-img'
+  kinesis_stream_name = 'octember-bizcard-img'
   write_records_to_kinesis(records, kinesis_stream_name)
 
 
 def test2():
   record = {"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/sungmk_bizcard.jpg", "owner": "sungmk", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "sungmk@amazon.com", "phone_number": "2710 9704", "company": "aws", "name": "Sungmin Kim", "job_title": "Solutions Architect"}}
   records = [record]
-  kinesis_stream_name = 'octemeber-biz-card-text'
+  kinesis_stream_name = 'octember-bizcard-text'
   write_records_to_kinesis(records, kinesis_stream_name)
 
 
