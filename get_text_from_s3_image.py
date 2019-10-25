@@ -134,14 +134,15 @@ def lambda_handler_for_kinesis_event(event, context):
       bucket, key = (json_data['s3_bucket'], json_data['s3_key'])
       detected_text = get_textract_data(bucket, key)
       doc = parse_textract_data(detected_text)
-
-      doc['doc_id'] = hashlib.md5(os.path.basename(key).encode('utf-8')).hexdigest()[:8]
       doc['created_at'] = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-      doc['is_alive'] = True
 
+      '''
+      doc['doc_id'] = hashlib.md5(os.path.basename(key).encode('utf-8')).hexdigest()[:8]
+      doc['is_alive'] = True
       #XXX: deduplicate contents
       content_id = ':'.join('{}'.format(doc.get(k, '').lower()) for k in ('name', 'email', 'phone_number'))
       doc['content_id'] = hashlib.md5(content_id.encode('utf-8')).hexdigest()[:8]
+      '''
 
       owner = os.path.basename(key).split('_')[0]
       text_data = {'s3_bucket': bucket, 's3_key': key, 'owner': owner, 'data': doc}
