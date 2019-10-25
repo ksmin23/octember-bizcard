@@ -2,6 +2,7 @@
 # -*- encoding: utf-8 -*-
 # vim: tabstop=2 shiftwidth=2 softtabstop=2 expandtab
 
+import sys
 import json
 import os
 import urllib.parse
@@ -35,7 +36,7 @@ def write_records_to_kinesis(records, kinesis_stream_name):
   for i in range(MAX_RETRY_COUNT):
     try:
       response = kinesis_client.put_records(Records=record_list, StreamName=kinesis_stream_name)
-      print(response) #debug
+      print("[INFO]", response, file=sys.stderr) #debug
       break
     except Exception as ex:
       import time
@@ -52,13 +53,14 @@ def lambda_handler(event, context):
     key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
 
     record = {'s3_bucket': bucket, 's3_key': key}
+    print("[INFO]", record, file=sys.stderr)
     write_records_to_kinesis([record], KINESIS_STREAM_NAME)
     #TODO: update image processing status into DynamoDB
   except Exception as ex:
     traceback.print_exc()
 
 
-def test():
+if __name__ == '__main__':
   event = '''{
   "Records": [
     {
@@ -99,8 +101,4 @@ def test():
 }'''
 
   lambda_handler(json.loads(event), {})
-
-
-if __name__ == '__main__':
-  test()
 
