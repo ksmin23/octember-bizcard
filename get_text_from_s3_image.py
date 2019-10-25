@@ -2,6 +2,7 @@
 # -*- encoding: utf-8 -*-
 # vim: tabstop=2 shiftwidth=2 softtabstop=2 expandtab
 
+import sys
 import json
 import os
 import urllib.parse
@@ -12,6 +13,8 @@ import datetime
 import hashlib
 
 import boto3
+
+KINESIS_STREAM_NAME = 'octember-bizcard-text'
 
 textract_client = boto3.client('textract')
 
@@ -31,7 +34,6 @@ def parse_textract_data(lines):
     #phone_number_re = re.compile(r'(?:\+ *)?\d[\d\- ]{7,}\d')
     phone_number_re = re.compile(r'\({0,1}\+{0,1}[\d ]*[\d]{2,}\){0,1}[\d\- ]{7,}')
     phones = phone_number_re.findall(s)
-    #print('phone', phones)
     return phones[0] if phones else ''
 
   funcs = {
@@ -57,7 +59,7 @@ def parse_textract_data(lines):
 
 
 def get_textract_data(bucketName, documentKey):
-  #print('Loading get_textract_data')
+  print('[DEBUG] Loading get_textract_data', file=sys.stderr)
 
   response = textract_client.detect_document_text(
   Document={
@@ -90,7 +92,7 @@ def write_records_to_kinesis(records, kinesis_stream_name):
   for i in range(MAX_RETRY_COUNT):
     try:
       response = kinesis_client.put_records(Records=record_list, StreamName=kinesis_stream_name)
-      print(response) #debug
+      print('[DEBUG]', response, file=sys.stderr)
       break
     except Exception as ex:
       import time
@@ -102,54 +104,30 @@ def write_records_to_kinesis(records, kinesis_stream_name):
 
 
 def lambda_handler(event, context):
-  #TODO: get event from kinesis; should process multiple events
-  # Get the object from the event and show its content type
-  bucket = event['Records'][0]['s3']['bucket']['name']
-  key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
-  try:
-    detectedText = get_textract_data(bucket, key)
-    doc = parse_textract_data(detectedText)
-    owner = os.path.basename(key).split('_')[0] 
-    payload = {'s3_bucket': bucket, 's3_key': key, 'owner': owner, 'data': doc}
-    #TODO: send records to kinesis
-    #write_records_to_kinesis([payload], kinesis_stream_name)
-    return payload
-  except Exception as ex:
-    print(ex)
-    print('[ERROR] getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, bucket))
-    raise ex
-
-def lambda_handler_for_kinesis_event(event, context):
   import collections
 
   counter = collections.OrderedDict([('reads', 0),
       ('writes', 0), ('errors', 0)])
 
-  #TODO: get event from kinesis; should process multiple events
   for record in event['Records']:
     try:
       counter['reads'] += 1
+
       payload = base64.b64decode(record['kinesis']['data']).decode('utf-8')
       json_data = json.loads(payload)
+
       bucket, key = (json_data['s3_bucket'], json_data['s3_key'])
       detected_text = get_textract_data(bucket, key)
+
       doc = parse_textract_data(detected_text)
       doc['created_at'] = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
-      '''
-      doc['doc_id'] = hashlib.md5(os.path.basename(key).encode('utf-8')).hexdigest()[:8]
-      doc['is_alive'] = True
-      #XXX: deduplicate contents
-      content_id = ':'.join('{}'.format(doc.get(k, '').lower()) for k in ('name', 'email', 'phone_number'))
-      doc['content_id'] = hashlib.md5(content_id.encode('utf-8')).hexdigest()[:8]
-      '''
-
       owner = os.path.basename(key).split('_')[0]
       text_data = {'s3_bucket': bucket, 's3_key': key, 'owner': owner, 'data': doc}
-      #TODO: send records to kinesis
-      #write_records_to_kinesis([text_data], kinesis_stream_name)
+      print('[DEBUG]', json.dumps(text_data), file=sys.stderr)
+
+      write_records_to_kinesis([text_data], KINESIS_STREAM_NAME)
       counter['writes'] += 1
-      return text_data
     except Exception as ex:
       counter['errors'] += 1
       print('[ERROR] getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, bucket), file=sys.stderr)
@@ -157,9 +135,9 @@ def lambda_handler_for_kinesis_event(event, context):
   print('[INFO]', ', '.join(['{}={}'.format(k, v) for k, v in counter.items()]), file=sys.stderr)
 
 
-def test_for_kinesis_event():
+if __name__ == '__main__':
   kinesis_data = [
-    '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/sungmk_bizcard.jpg"}''',
+    '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/sungmk_20191025_1622.jpg"}''',
   ]
 
   records = [{
@@ -178,112 +156,7 @@ def test_for_kinesis_event():
     "eventSource": "aws:kinesis",
     "awsRegion": "us-east-1"
     } for e in kinesis_data]
+
   event = {"Records": records}
-  res = lambda_handler_for_kinesis_event(event,{})
-  print(json.dumps(res, indent=2))
-
-
-def test():
-  event = '''{
-  "Records": [
-    {
-      "eventVersion": "2.0",
-      "eventSource": "aws:s3",
-      "awsRegion": "us-east-1",
-      "eventTime": "1970-01-01T00:00:00.000Z",
-      "eventName": "ObjectCreated:Put",
-      "userIdentity": {
-        "principalId": "EXAMPLE"
-      },
-      "requestParameters": {
-        "sourceIPAddress": "127.0.0.1"
-      },
-      "responseElements": {
-        "x-amz-request-id": "EXAMPLE123456789",
-        "x-amz-id-2": "EXAMPLE123/5678abcdefghijklambdaisawesome/mnopqrstuvwxyzABCDEFGH"
-      },
-      "s3": {
-        "s3SchemaVersion": "1.0",
-        "configurationId": "testConfigRule",
-        "bucket": {
-          "name": "octember-use1",
-          "ownerIdentity": {
-            "principalId": "EXAMPLE"
-          },
-          "arn": "arn:aws:s3:::octember-use1"
-        },
-        "object": {
-          "key": "bizcard-raw-img/sungmk_bizcard.jpg",
-          "size": 638,
-          "eTag": "0123456789abcdef0123456789abcdef",
-          "sequencer": "0A1B2C3D4E5F678901"
-        }
-      }
-    }
-  ]
-}'''
-
-  res = lambda_handler(json.loads(event), {})
-  print(json.dumps(res))
-
-
-def test3():
-  event = '''{
-  "Records": [
-    {
-      "eventVersion": "2.0",
-      "eventSource": "aws:s3",
-      "awsRegion": "us-east-1",
-      "eventTime": "1970-01-01T00:00:00.000Z",
-      "eventName": "ObjectCreated:Put",
-      "userIdentity": {
-        "principalId": "EXAMPLE"
-      },
-      "requestParameters": {
-        "sourceIPAddress": "127.0.0.1"
-      },
-      "responseElements": {
-        "x-amz-request-id": "EXAMPLE123456789",
-        "x-amz-id-2": "EXAMPLE123/5678abcdefghijklambdaisawesome/mnopqrstuvwxyzABCDEFGH"
-      },
-      "s3": {
-        "s3SchemaVersion": "1.0",
-        "configurationId": "testConfigRule",
-        "bucket": {
-          "name": "octember-use1",
-          "ownerIdentity": {
-            "principalId": "EXAMPLE"
-          },
-          "arn": "arn:aws:s3:::octember-use1"
-        },
-        "object": {
-          "key": "bizcard-raw-img/sungmk_bizcard.jpg",
-          "size": 638,
-          "eTag": "0123456789abcdef0123456789abcdef",
-          "sequencer": "0A1B2C3D4E5F678901"
-        }
-      }
-    }
-  ]
-}'''
-
-  event = json.loads(event)
-  bucket = event['Records'][0]['s3']['bucket']['name']
-  key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
-  record = {'s3_bucket': bucket, 's3_key': key}
-  records = [record]
-  kinesis_stream_name = 'octember-bizcard-img'
-  write_records_to_kinesis(records, kinesis_stream_name)
-
-
-def test2():
-  record = {"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/sungmk_bizcard.jpg", "owner": "sungmk", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "sungmk@amazon.com", "phone_number": "2710 9704", "company": "aws", "name": "Sungmin Kim", "job_title": "Solutions Architect"}}
-  records = [record]
-  kinesis_stream_name = 'octember-bizcard-text'
-  write_records_to_kinesis(records, kinesis_stream_name)
-
-
-if __name__ == '__main__':
-  #test3()
-  test_for_kinesis_event()
+  lambda_handler(event, {})
 

@@ -45,7 +45,7 @@ es_client = Elasticsearch(
     verify_certs=True,
     connection_class=RequestsHttpConnection
 )
-print('[INFO] ElasticSearch Service', json.dumps(es_client.info(), indent=2))
+print('[INFO] ElasticSearch Service', json.dumps(es_client.info(), indent=2), file=sys.stderr)
 
 def lambda_handler(event, context):
   import collections
@@ -94,9 +94,9 @@ def lambda_handler(event, context):
     traceback.print_exc()
 
 
-def test():
+if __name__ == '__main__':
   kinesis_data = [
-    '''{"s3_bucket":"octember-use1","s3_key":"bizcard-raw-img/sungmk_bizcard.jpg","owner":"sungmk","data":{"addr":"1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea","email":"sungmk@amazon.com","phone_number":"(+82 10) 2710 9704 ","company":"aws","name":"Sungmin Kim","job_title":"Solutions Architect","created_at":"2019-10-25T01:12:54Z"}}''',
+    '''{"s3_bucket":"octember-use1","s3_key":"bizcard-raw-img/sungmk_20191025_1622.jpg","owner":"sungmk","data":{"addr":"1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea","email":"sungmk@amazon.com","phone_number":"(+82 10) 2710 9704 ","company":"aws","name":"Sungmin Kim","job_title":"Solutions Architect","created_at":"2019-10-25T01:12:54Z"}}''',
   ]
 
   records = [{
@@ -118,6 +118,3 @@ def test():
   event = {"Records": records}
   lambda_handler(event,{})
 
-
-if __name__ == '__main__':
-  test()
