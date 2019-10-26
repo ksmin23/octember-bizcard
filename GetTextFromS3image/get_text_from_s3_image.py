@@ -141,7 +141,7 @@ def update_process_status(ddb_client, table_name, item):
 
   try:
     res = ddb_update_item()
-    print('[DEBUG]', res)
+    print('[DEBUG]', res, file=sys.stderr)
   except Exception as ex:
     traceback.print_exc()
     raise ex
