@@ -14,10 +14,12 @@ import hashlib
 
 import boto3
 
-
+AWS_REGION = 'us-east-1'
 KINESIS_STREAM_NAME = 'octember-bizcard-img'
+DDB_TABLE_NAME = 'OctemberBizcardImg'
 
-def write_records_to_kinesis(records, kinesis_stream_name):
+
+def write_records_to_kinesis(kinesis_client, kinesis_stream_name, records):
   import random
   random.seed(47)
 
@@ -30,13 +32,12 @@ def write_records_to_kinesis(records, kinesis_stream_name):
     return record_list
 
   MAX_RETRY_COUNT = 3
-  kinesis_client = boto3.client('kinesis')
 
   record_list = gen_records()
   for i in range(MAX_RETRY_COUNT):
     try:
       response = kinesis_client.put_records(Records=record_list, StreamName=kinesis_stream_name)
-      print("[INFO]", response, file=sys.stderr) #debug
+      print("[DEBUG]", response, file=sys.stderr)
       break
     except Exception as ex:
       import time
@@ -47,21 +48,70 @@ def write_records_to_kinesis(records, kinesis_stream_name):
     raise RuntimeError('[ERROR] Failed to put_records into kinesis stream: {}'.format(kinesis_stream_name))
 
 
-def lambda_handler(event, context):
-  try:
-    bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
+def update_process_status(ddb_client, table_name, item):
+  def ddb_update_item():
+    s3_bucket = item['s3_bucket']
+    s3_key = item['s3_key']
+    image_id = os.path.basename(s3_key)
+    status = item['status']
+    modified_time = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
 
-    record = {'s3_bucket': bucket, 's3_key': key}
-    print("[INFO]", record, file=sys.stderr)
-    write_records_to_kinesis([record], KINESIS_STREAM_NAME)
-    #TODO: update image processing status into DynamoDB
+    response = ddb_client.update_item(
+      TableName=table_name,
+      Key={
+        "image_id": {
+          "S": image_id
+        }
+      },
+      UpdateExpression="SET s3_bucket = :s3_bucket, s3_key = :s3_key, mts = :mts, #status = :status",
+      ConditionExpression = "attribute_not_exists(image_id) OR mts < :mts",
+      ExpressionAttributeNames={
+        '#status': 'status'
+      },
+      ExpressionAttributeValues={
+        ":s3_bucket": {
+          "S": s3_bucket
+        },
+        ":s3_key": {
+          "S":  s3_key
+        },
+        ":mts": {
+          "N": "{}".format(modified_time)
+        },
+        ":status": {
+          "S": status
+        }
+      }
+    )
+    return response
+
+  try:
+    res = ddb_update_item()
+    print('[DEBUG]', res, file=sys.stderr)
   except Exception as ex:
     traceback.print_exc()
+    raise ex
+
+
+def lambda_handler(event, context):
+  kinesis_client = boto3.client('kinesis', region_name=AWS_REGION)
+  ddb_client = boto3.client('dynamodb', region_name=AWS_REGION)
+
+  for record in event['Records']:
+    try:
+      bucket = record['s3']['bucket']['name']
+      key = urllib.parse.unquote_plus(record['s3']['object']['key'], encoding='utf-8')
+
+      record = {'s3_bucket': bucket, 's3_key': key}
+      print("[INFO]", record, file=sys.stderr)
+      write_records_to_kinesis(kinesis_client, KINESIS_STREAM_NAME, [record])
+      update_process_status(ddb_client, DDB_TABLE_NAME, {'s3_bucket': bucket, 's3_key': key, 'status': 'START'})
+    except Exception as ex:
+      traceback.print_exc()
 
 
 if __name__ == '__main__':
-  event = '''{
+  s3_event = '''{
   "Records": [
     {
       "eventVersion": "2.0",
@@ -100,5 +150,6 @@ if __name__ == '__main__':
   ]
 }'''
 
-  lambda_handler(json.loads(event), {})
+  event = json.loads(s3_event)
+  lambda_handler(event, {})
 
