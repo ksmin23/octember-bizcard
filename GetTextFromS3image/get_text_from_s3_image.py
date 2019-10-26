@@ -147,12 +147,27 @@ def update_process_status(ddb_client, table_name, item):
     raise ex
 
 
+def copy_bizcard_to_user_photo_album(s3_client, params):
+  src_bucket, src_key, owner = params['s3_bucket'], params['s3_key'], params['owner']
+  copy_source = {
+    'Bucket': src_bucket,
+    'Key': src_key
+  }
+
+  image_id = os.path.basename(src_key)
+  dest_s3_bucket = src_bucket
+  dest_s3_key = 'bizcard-by-user/{owner}/{image_id}'.format(owner=owner, image_id=image_id)
+  s3_client.copy(copy_source, dest_s3_bucket, dest_s3_key)
+  return {'s3_bucket': dest_s3_bucket, 's3_key': dest_s3_key, 'owner': owner}
+
+
 def lambda_handler(event, context):
   import collections
 
   textract_client = boto3.client('textract', region_name=AWS_REGION)
   kinesis_client = boto3.client('kinesis', region_name=AWS_REGION)
   ddb_client = boto3.client('dynamodb', region_name=AWS_REGION)
+  s3_client = boto3.client('s3', region_name=AWS_REGION)
 
   counter = collections.OrderedDict([('reads', 0),
       ('writes', 0), ('errors', 0)])
@@ -165,6 +180,8 @@ def lambda_handler(event, context):
       json_data = json.loads(payload)
 
       bucket, key = (json_data['s3_bucket'], json_data['s3_key'])
+      update_process_status(ddb_client, DDB_TABLE_NAME, {'s3_bucket': bucket, 's3_key': key, 'status': 'PROCESS'})
+
       detected_text = get_textract_data(textract_client, bucket, key)
 
       doc = parse_textract_data(detected_text)
@@ -175,7 +192,9 @@ def lambda_handler(event, context):
       print('[DEBUG]', json.dumps(text_data), file=sys.stderr)
 
       write_records_to_kinesis(kinesis_client, KINESIS_STREAM_NAME, [text_data])
-      update_process_status(ddb_client, DDB_TABLE_NAME, {'s3_bucket': bucket, 's3_key': key, 'status': 'PROCESS'})
+      ret = copy_bizcard_to_user_photo_album(s3_client, {'s3_bucket': bucket, 's3_key': key, 'owner': owner})
+
+      update_process_status(ddb_client, DDB_TABLE_NAME, {'s3_bucket': ret['s3_bucket'], 's3_key': ret['s3_key'], 'status': 'END'})
 
       counter['writes'] += 1
     except Exception as ex:
