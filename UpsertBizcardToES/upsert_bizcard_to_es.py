@@ -66,10 +66,11 @@ def lambda_handler(event, context):
         counter['invalid'] += 1
         continue
 
-      key = json_data['s3_key']
+      image_id = os.path.basename(json_data['s3_key'])
       doc = json_data['data']
+      doc['doc_id'] = hashlib.md5(image_id.encode('utf-8')).hexdigest()[:8]
+      doc['image_id'] = image_id
       doc['owner'] = json_data['owner']
-      doc['doc_id'] = hashlib.md5(os.path.basename(key).encode('utf-8')).hexdigest()[:8]
       doc['is_alive'] = 1
 
       #XXX: deduplicate contents
