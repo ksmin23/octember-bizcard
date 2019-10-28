@@ -9,14 +9,7 @@ import base64
 import traceback
 import random
 import hashlib
-import warnings
-import urllib.request
-import time
-import pprint
 
-import boto3
-
-from gremlin_python import statics
 from gremlin_python.structure.graph import Graph
 from gremlin_python.process.graph_traversal import __
 from gremlin_python.process.strategies import *
@@ -118,7 +111,7 @@ def _print_all_vertices(g):
               for properties in g.V(node).valueMap()]
   pprint.pprint(all_persons)
 
-
+# pylint: disable=unused-argument
 def lambda_handler(event, context):
   import collections
 
@@ -128,7 +121,7 @@ def lambda_handler(event, context):
       ('errors', 0)])
 
   neptune_endpoint, neptune_port = (NEPTUNE_ENDPOINT, NEPTUNE_PORT)
-  #graph_db = graph_traversal(neptune_endpoint, neptune_port) #debug
+  graph_db = graph_traversal(neptune_endpoint, neptune_port)
 
   for record in event['Records']:
     try:
@@ -150,31 +143,34 @@ def lambda_handler(event, context):
         "job_title": record['job_title'],
         "owner": json_data['owner']
       }
-      print(json.dumps(person, indent=2)) # debug
-      #upsert_person(graph_db, person)
+      #print(json.dumps(person, indent=2))
+      upsert_person(graph_db, person)
+
       counter['writes'] += 1
-    except Exception as ex:
+    except Exception as _:
       counter['errors'] += 1
       traceback.print_exc()
 
 
 if __name__ == '__main__':
+  # pylint: disable=invalid-name
   kinesis_data = [
+    # pylint: disable=bad-indentation
+    # pylint: disable=line-too-long
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/sungmk_bizcard_0046.jpg", "owner": "sungmk", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "sungmk@amazon.com", "phone_number": "(+82 10) 1025 7049", "company": "aws", "name": "Sungmin Kim", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/sungmk_bizcard_0071.jpg", "owner": "sungmk", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "ijpark@amazon.com", "phone_number": "(+82 10) 7433 9352", "company": "aws", "name": "Injae Park", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/sungmk_bizcard_0044.jpg", "owner": "sungmk", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "jjinseo@amazon.com", "phone_number": "(+82 10) 4218 8396", "company": "aws", "name": "JinSeo Jang", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/sungmk_bizcard_0050.jpg", "owner": "sungmk", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "hyouk@amazon.com", "phone_number": "(+82 10) 6430 0671", "company": "aws", "name": "Hyounsoo Kim", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
-
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/hyouk_bizcard_0050.jpg", "owner": "hyouk", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "hyouk@amazon.com", "phone_number": "(+82 10) 6430 0671", "company": "aws", "name": "Hyounsoo Kim", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/hyouk_bizcard_0046.jpg", "owner": "hyouk", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "sungmk@amazon.com", "phone_number": "(+82 10) 1025 7049", "company": "aws", "name": "Sungmin Kim", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/hyouk_bizcard_0054.jpg", "owner": "hyouk", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "kevkim@amazon.com", "phone_number": "(+82 10) 0388 1679", "company": "aws", "name": "Kevin Kim", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/hyouk_bizcard_0001.jpg", "owner": "hyouk", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "danieyoo@amazon.com", "phone_number": "(+82 10) 4323 7890", "company": "aws", "name": "Daniel Yoo", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
-
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/kevkim_bizcard_0093.jpg", "owner": "kevkim", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "kevkim@amazon.com", "phone_number": "(+82 10) 8957 0150", "company": "aws", "name": "Kevin Kim", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/kevkim_bizcard_0041.jpg", "owner": "kevkim", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "ijpark@amazon.com", "phone_number": "(+82 10) 9300 7008", "company": "aws", "name": "Injae Park", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/kevkim_bizcard_0030.jpg", "owner": "kevkim", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "jjinseo@amazon.com", "phone_number": "(+82 10) 3896 8574", "company": "aws", "name": "JinSeo Jang", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
   ]
 
+  #pylint: disable=bad-indentation
   records = [{
     "eventID": "shardId-000000000000:49545115243490985018280067714973144582180062593244200961",
     "eventVersion": "1.0",
@@ -192,4 +188,4 @@ if __name__ == '__main__':
     "awsRegion": "us-east-1"
     } for e in kinesis_data]
   event = {"Records": records}
-  lambda_handler(event,{})
+  lambda_handler(event, {})
