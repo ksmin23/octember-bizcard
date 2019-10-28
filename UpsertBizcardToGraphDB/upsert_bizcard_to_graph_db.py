@@ -88,7 +88,7 @@ def get_person(g, person_id):
 def upsert_person(g, person):
   person_vertex = get_person(g, person['id'])
   elem = g.addV('person').property(T.id, person['id']).next() if not person_vertex else g.V(person_vertex).next()
-  for k in ('name', 'email', 'phone_number', 'company', 'job_title'):
+  for k in ('id', 'name', 'email', 'phone_number', 'company', 'job_title'):
     g.V(elem).property(k, person[k]).next()
 
   _from_person_id = hashlib.md5(person['owner'].encode('utf-8')).hexdigest()[:8]
