@@ -54,10 +54,16 @@ def people_you_may_know(g, user_name):
     both('knows').aggregate('friends').
     both('knows').
       where(P.neq('person')).where(P.without('friends')).
-    groupCount().by('name').
+    groupCount().by('id').
     order(Scope.local).by(Column.values, Order.decr).
     next())
-  return [{'name': key, 'score': score} for key, score in recommendations.items()]
+
+  res = []
+  for key, score in recommendations.items():
+    value = dict(g.V(key).valueMap().next())
+    value['score'] = score
+    res.append(value)
+  return res
 
 
 def lambda_handler(event, context):
