@@ -61,7 +61,7 @@ def people_you_may_know(g, user_name):
   res = []
   for key, score in recommendations.items():
     value = {k: v for k, v in g.V(key).valueMap().next().items() if not (k == 'id' or k.startswith('_'))}
-    value['score'] = score
+    value['score'] = float(score)
     res.append(value)
   return res
 
