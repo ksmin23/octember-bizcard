@@ -50,7 +50,7 @@ def graph_traversal(neptune_endpoint=None, neptune_port=NEPTUNE_PORT, show_endpo
 def people_you_may_know(g, user_name):
   from gremlin_python.process.traversal import Scope, Column, Order
 
-  recommendations = (g.V().hasLabel('person').has('name', user_name).as_('person').
+  recommendations = (g.V().hasLabel('person').has('_name', user_name.lower()).as_('person').
     both('knows').aggregate('friends').
     both('knows').
       where(P.neq('person')).where(P.without('friends')).
@@ -60,7 +60,7 @@ def people_you_may_know(g, user_name):
 
   res = []
   for key, score in recommendations.items():
-    value = dict(g.V(key).valueMap().next())
+    value = {k: v for k, v in g.V(key).valueMap().next().items() if not (k == 'id' or k.startswith('_'))}
     value['score'] = score
     res.append(value)
   return res
