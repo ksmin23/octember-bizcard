@@ -60,9 +60,11 @@ def lambda_handler(event, context):
     res = es_client.search(index=ES_INDEX, body=es_query_body)
     print("[INFO] Got {} Hits:".format(res['hits']['total']['value']), file=sys.stderr)
 
+    #XXX: https://aws.amazon.com/ko/premiumsupport/knowledge-center/malformed-502-api-gateway/
     response = {
       'statusCode': 200,
-      'body': res
+      'body': json.dumps(res),
+      'isBase64Encoded': False
     }
     return response
   except Exception as ex:
@@ -70,7 +72,8 @@ def lambda_handler(event, context):
 
     response = {
       'statusCode': 404,
-      'body': {}
+      'body': 'Not Found'
+      'isBase64Encoded': False
     }
     return response
 
@@ -88,10 +91,10 @@ if __name__ == '__main__':
     },
     "multiValueQueryStringParameters": {
       "query": [
-          "sungmin"
+        "sungmin"
       ],
       "user": [
-          "sungmk"
+        "sungmk"
       ]
     },
     "pathParameters": None,

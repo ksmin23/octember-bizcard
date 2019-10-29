@@ -79,17 +79,20 @@ def lambda_handler(event, context):
     user_name = event["queryStringParameters"]["user"]
 
     res = people_you_may_know(graph_db, user_name)
+    #XXX: https://aws.amazon.com/ko/premiumsupport/knowledge-center/malformed-502-api-gateway/
     response = {
       'statusCode': 200,
-      'body': res
+      'body': json.dumps(res),
+      'isBase64Encoded': False
     }
     return response
   except Exception as ex:
     traceback.print_exc()
 
     response = {
-      'statusCode': 404,
-      'body': []
+      'statusCode': 200,
+      'body': 'Not Found',
+      'isBase64Encoded': False
     }
     return response
 
