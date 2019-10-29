@@ -1,3 +1,9 @@
+# pip install elasticsearch
 elasticsearch==7.0.5
 requests-aws4auth==0.9
+
+# pip install gremlinpython
+aenum==2.2.2
 gremlinpython==3.4.4
+isodate==0.6.0
+tornado==4.5.3
