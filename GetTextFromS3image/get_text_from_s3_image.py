@@ -5,18 +5,16 @@
 import sys
 import json
 import os
-import urllib.parse
 import re
 import base64
 import traceback
 import datetime
-import hashlib
 
 import boto3
 
-AWS_REGION = 'us-east-1'
-KINESIS_STREAM_NAME = 'octember-bizcard-text'
-DDB_TABLE_NAME = 'OctemberBizcardImg'
+AWS_REGION = os.getenv('REGION_NAME', 'us-east-1')
+KINESIS_STREAM_NAME = os.getenv('KINESIS_STREAM_NAME', 'octember-bizcard-text')
+DDB_TABLE_NAME = os.getenv('DDB_TABLE_NAME', 'OctemberBizcardImg')
 
 def parse_textract_data(lines):
   def _get_email(s):

@@ -16,12 +16,12 @@ from gremlin_python.process.traversal import T, P, Operator, Scope, Column, Orde
 from gremlin_python.process.anonymous_traversal import traversal
 from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
 
-#TODO: should change
-AWS_REGION = 'us-east-1'
-NEPTUNE_ENDPOINT = 'octemberbizcard.cnrh6fettief.us-east-1.neptune.amazonaws.com'
-NEPTUNE_PORT = 8182
+AWS_REGION = os.getenv('REGION_NAME', 'us-east-1')
+NEPTUNE_ENDPOINT = os.getenv('NEPTUNE_ENDPOINT', 'octember-bizcard-cluster.cluster-cnrh6fettief.us-east-1.neptune.amazonaws.com')
+NEPTUNE_PORT = int(os.getenv('NEPTUNE_PORT', '8182'))
 
 NEPTUNE_CONN = None
+
 
 def graph_traversal(neptune_endpoint=None, neptune_port=NEPTUNE_PORT, show_endpoint=True, connection=None):
   def _remote_connection(neptune_endpoint=None, neptune_port=None, show_endpoint=True):

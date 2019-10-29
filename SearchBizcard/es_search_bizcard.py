@@ -12,11 +12,10 @@ from elasticsearch import Elasticsearch
 from elasticsearch import RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 
-#TODO: should change
-ES_INDEX, ES_TYPE = ('octember_bizcard', 'bizcard')
-ES_HOST = 'vpc-movies-fycobrhs4jyxpq4k3cumu7cgli.us-east-1.es.amazonaws.com'
+ES_INDEX, ES_TYPE = (os.getenv('ES_INDEX', 'octember_bizcard'), os.getenv('ES_TYPE', 'bizcard'))
+ES_HOST = os.getenv('ES_HOST', 'vpc-octember-kfwwunjrm422d44nr7dnhvjsw4.us-east-1.es.amazonaws.com')
 
-AWS_REGION = 'us-east-1'
+AWS_REGION = os.getenv('REGION_NAME', 'us-east-1')
 
 session = boto3.Session(region_name=AWS_REGION)
 credentials = session.get_credentials()

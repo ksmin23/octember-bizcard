@@ -6,17 +6,16 @@ import sys
 import json
 import os
 import urllib.parse
-import re
-import base64
 import traceback
 import datetime
-import hashlib
 
 import boto3
 
-AWS_REGION = 'us-east-1'
-KINESIS_STREAM_NAME = 'octember-bizcard-img'
-DDB_TABLE_NAME = 'OctemberBizcardImg'
+DRY_RUN = (os.getenv('DRY_RUN', 'false') == 'true')
+
+AWS_REGION = os.getenv('REGION_NAME', 'us-east-1')
+KINESIS_STREAM_NAME = os.getenv('KINESIS_STREAM_NAME', 'octember-bizcard-img')
+DDB_TABLE_NAME = os.getenv('DDB_TABLE_NAME', 'OctemberBizcardImg')
 
 
 def write_records_to_kinesis(kinesis_client, kinesis_stream_name, records):
@@ -34,7 +33,7 @@ def write_records_to_kinesis(kinesis_client, kinesis_stream_name, records):
   MAX_RETRY_COUNT = 3
 
   record_list = gen_records()
-  for i in range(MAX_RETRY_COUNT):
+  for _ in range(MAX_RETRY_COUNT):
     try:
       response = kinesis_client.put_records(Records=record_list, StreamName=kinesis_stream_name)
       print("[DEBUG]", response, file=sys.stderr)

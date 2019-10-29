@@ -1,4 +1,6 @@
-# octember-py-lambda-textract
+# octember
+
+ bizcard managment app
 
 
 ### how-to make layer package in python 

@@ -19,9 +19,9 @@ from gremlin_python.driver.driver_remote_connection import DriverRemoteConnectio
 
 random.seed(47)
 
-AWS_REGION = 'us-east-1'
-NEPTUNE_ENDPOINT = 'octemberbizcard.cnrh6fettief.us-east-1.neptune.amazonaws.com'
-NEPTUNE_PORT = 8182
+AWS_REGION = os.getenv('REGION_NAME', 'us-east-1')
+NEPTUNE_ENDPOINT = os.getenv('NEPTUNE_ENDPOINT', 'octember-bizcard-cluster.cluster-cnrh6fettief.us-east-1.neptune.amazonaws.com')
+NEPTUNE_PORT = int(os.getenv('NEPTUNE_PORT', '8182'))
 
 
 def graph_traversal(neptune_endpoint=None, neptune_port=NEPTUNE_PORT, show_endpoint=True, connection=None):
@@ -167,8 +167,8 @@ if __name__ == '__main__':
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/hyouk_bizcard_0054.jpg", "owner": "hyouk", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "kevkim@amazon.com", "phone_number": "(+82 10) 0388 1679", "company": "aws", "name": "Kevin Kim", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/hyouk_bizcard_0001.jpg", "owner": "hyouk", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "danieyoo@amazon.com", "phone_number": "(+82 10) 4323 7890", "company": "aws", "name": "Daniel Yoo", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
     '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/kevkim_bizcard_0093.jpg", "owner": "kevkim", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "kevkim@amazon.com", "phone_number": "(+82 10) 8957 0150", "company": "aws", "name": "Kevin Kim", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
-    '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/kevkim_bizcard_0041.jpg", "owner": "kevkim", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "ijpark@amazon.com", "phone_number": "(+82 10) 9300 7008", "company": "aws", "name": "Injae Park", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
-    '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/kevkim_bizcard_0030.jpg", "owner": "kevkim", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "jjinseo@amazon.com", "phone_number": "(+82 10) 3896 8574", "company": "aws", "name": "JinSeo Jang", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
+    '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/kevkim_bizcard_0041.jpg", "owner": "kevkim", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "ijpark@amazon.com", "phone_number": "(+82 10) 7433 9352", "company": "aws", "name": "Injae Park", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
+    '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/kevkim_bizcard_0030.jpg", "owner": "kevkim", "data": {"addr": "1 2Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea", "email": "jjinseo@amazon.com", "phone_number": "(+82 10) 4218 8396", "company": "aws", "name": "JinSeo Jang", "job_title": "Solutions Architect", "created_at": "2019-10-25T01:12:54Z"}}''',
   ]
 
   #pylint: disable=bad-indentation
@@ -190,3 +190,4 @@ if __name__ == '__main__':
     } for e in kinesis_data]
   event = {"Records": records}
   lambda_handler(event, {})
+
