@@ -61,8 +61,7 @@ def lambda_handler(event, context):
 
   response = {
     'statusCode': 200,
-    #'body': json.dumps(es_client.info())
-    'body': json.dumps(res)
+    'body': res
   }
   return response
 
