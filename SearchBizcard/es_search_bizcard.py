@@ -5,6 +5,7 @@
 import sys
 import json
 import traceback
+import pprint
 
 import boto3
 from elasticsearch import Elasticsearch
@@ -79,7 +80,7 @@ if __name__ == '__main__':
     },
     "multiValueQueryStringParameters": {
         "query": [
-            "Sungmin"
+            "sungmin"
         ],
         "user": [
             "sungmk"
@@ -123,5 +124,6 @@ if __name__ == '__main__':
     "isBase64Encoded": False
   }
 
-  lambda_handler(event, {})
+  res = lambda_handler(event, {})
+  pprint.pprint(res)
 
