@@ -45,8 +45,13 @@ print('[INFO] ElasticSearch Service', json.dumps(es_client.info(), indent=2), fi
 
 def lambda_handler(event, context):
   try:
-    query_keywords = event["queryStringParameters"]["query"]
-    user_name = event["queryStringParameters"]["user"]
+    query_params = event['queryStringParameters']
+    query_keywords = query_params.get('query', '')
+    assert query_keywords
+
+    limit = int(query_params.get('limit', '10'))
+
+    user_name = query_params.get('user', '')
 
     es_query_body = {
       "query": {
@@ -57,7 +62,7 @@ def lambda_handler(event, context):
       }
     }
 
-    res = es_client.search(index=ES_INDEX, body=es_query_body)
+    res = es_client.search(index=ES_INDEX, body=es_query_body, size=limit)
     print("[INFO] Got {} Hits:".format(res['hits']['total']['value']), file=sys.stderr)
 
     #XXX: https://aws.amazon.com/ko/premiumsupport/knowledge-center/malformed-502-api-gateway/
@@ -72,7 +77,7 @@ def lambda_handler(event, context):
 
     response = {
       'statusCode': 404,
-      'body': 'Not Found'
+      'body': 'Not Found',
       'isBase64Encoded': False
     }
     return response
