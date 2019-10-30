@@ -5,10 +5,12 @@
 import sys
 import os
 import json
+import hashlib
 import traceback
 import pprint
 
 import boto3
+import redis
 
 from gremlin_python import statics
 from gremlin_python.structure.graph import Graph
@@ -24,6 +26,8 @@ NEPTUNE_PORT = int(os.getenv('NEPTUNE_PORT', '8182'))
 
 NEPTUNE_CONN = None
 
+ELASTICACHE_HOST = os.getenv('ELASTICACHE_HOST', 'octember-es-cache.81kuqj.0001.use1.cache.amazonaws.com')
+redis_client = redis.Redis(host=ELASTICACHE_HOST, port=6379, db=0)
 
 def graph_traversal(neptune_endpoint=None, neptune_port=NEPTUNE_PORT, show_endpoint=True, connection=None):
   def _remote_connection(neptune_endpoint=None, neptune_port=None, show_endpoint=True):
@@ -78,11 +82,24 @@ def lambda_handler(event, context):
   try:
     user_name = event["queryStringParameters"]["user"]
 
-    res = people_you_may_know(graph_db, user_name)
+    query_hash_code = hashlib.md5(user_name.lower().encode('utf-8')).hexdigest()[:8]
+    query_id = 'pymk:query_id:{}'.format(query_hash_code)
+    print('[DEBUG] PYMK query id: {}'.format(query_id))
+
+    results = redis_client.get(query_id)
+    results = results.decode('utf-8') if results != None else None
+    if results is None:
+      ret = people_you_may_know(graph_db, user_name)
+      total_count = len(ret)
+      print("[INFO] Got {} Hits:".format(total_count), file=sys.stderr)
+      results = json.dumps(ret)
+      if total_count > 0:
+        redis_client.set(query_id, results, ex=10*60, nx=True)
+
     #XXX: https://aws.amazon.com/ko/premiumsupport/knowledge-center/malformed-502-api-gateway/
     response = {
       'statusCode': 200,
-      'body': json.dumps(res),
+      'body': results,
       'isBase64Encoded': False
     }
     return response
@@ -91,7 +108,7 @@ def lambda_handler(event, context):
 
     response = {
       'statusCode': 200,
-      'body': 'Not Found',
+      'body': '[]',
       'isBase64Encoded': False
     }
     return response
