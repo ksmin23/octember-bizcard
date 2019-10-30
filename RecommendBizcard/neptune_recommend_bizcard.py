@@ -26,7 +26,7 @@ NEPTUNE_PORT = int(os.getenv('NEPTUNE_PORT', '8182'))
 
 NEPTUNE_CONN = None
 
-ELASTICACHE_HOST = os.getenv('ELASTICACHE_HOST', 'octember-es-cache.81kuqj.0001.use1.cache.amazonaws.com')
+ELASTICACHE_HOST = os.getenv('ELASTICACHE_HOST', 'octember-neptune-cache.81kuqj.0001.use1.cache.amazonaws.com')
 redis_client = redis.Redis(host=ELASTICACHE_HOST, port=6379, db=0)
 
 def graph_traversal(neptune_endpoint=None, neptune_port=NEPTUNE_PORT, show_endpoint=True, connection=None):
