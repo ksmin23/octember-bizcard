@@ -5,6 +5,7 @@
 import sys
 import json
 import os
+import hashlib
 import traceback
 import pprint
 
@@ -12,6 +13,10 @@ import boto3
 from elasticsearch import Elasticsearch
 from elasticsearch import RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
+import redis
+
+ELASTICACHE_HOST = os.getenv('ELASTICACHE_HOST', 'octember-es-cache.81kuqj.0001.use1.cache.amazonaws.com')
+redis_client = redis.Redis(host=ELASTICACHE_HOST, port=6379, db=0)
 
 ES_INDEX, ES_TYPE = (os.getenv('ES_INDEX', 'octember_bizcard'), os.getenv('ES_TYPE', 'bizcard'))
 ES_HOST = os.getenv('ES_HOST', 'vpc-octember-kfwwunjrm422d44nr7dnhvjsw4.us-east-1.es.amazonaws.com')
@@ -50,25 +55,48 @@ def lambda_handler(event, context):
     assert query_keywords
 
     limit = int(query_params.get('limit', '10'))
-
     user_name = query_params.get('user', '')
 
     es_query_body = {
       "query": {
-        "multi_match" : {
-          "query":  query_keywords,
-          "fields": [ "name^3", "company", "job_title" ]
+        "bool": {
+          "must": [
+            {
+              "multi_match": {
+                "query": query_keywords,
+                "fields": [
+                  "name^3",
+                  "company",
+                  "job_title"
+                ]
+              }
+            }
+          ]
         }
       }
     }
 
-    res = es_client.search(index=ES_INDEX, body=es_query_body, size=limit)
-    print("[INFO] Got {} Hits:".format(res['hits']['total']['value']), file=sys.stderr)
+    if user_name:
+      es_query_body['query']['bool']['filter'] = [{"term": {"owner": user_name}}]
+
+    query_hash_code = hashlib.md5(json.dumps(es_query_body).encode('utf-8')).hexdigest()[:8]
+    query_id = 'es:query_id:{}:limit:{}'.format(query_hash_code, limit)
+    print('[DEBUG] elasticsearch query id: {}'.format(query_id))
+
+    results = redis_client.get(query_id)
+    results = results.decode('utf-8') if results != None else None
+    if results is None:
+      ret = es_client.search(index=ES_INDEX, body=es_query_body, size=limit)
+      total_count = int(ret['hits']['total']['value'])
+      print("[INFO] Got {} Hits:".format(total_count), file=sys.stderr)
+      results = json.dumps(ret['hits']['hits'])
+      if total_count > 0:
+        redis_client.set(query_id, results, ex=10*60, nx=True)
 
     #XXX: https://aws.amazon.com/ko/premiumsupport/knowledge-center/malformed-502-api-gateway/
     response = {
       'statusCode': 200,
-      'body': json.dumps(res),
+      'body': results,
       'isBase64Encoded': False
     }
     return response
@@ -77,7 +105,7 @@ def lambda_handler(event, context):
 
     response = {
       'statusCode': 404,
-      'body': 'Not Found',
+      'body': '[]',
       'isBase64Encoded': False
     }
     return response
@@ -92,14 +120,14 @@ if __name__ == '__main__':
     "multiValueHeaders": None,
     "queryStringParameters": {
       "query": "sungmin",
-      "user": "sungmk"
+      "user": "hyoukxxx"
     },
     "multiValueQueryStringParameters": {
       "query": [
         "sungmin"
       ],
       "user": [
-        "sungmk"
+        "hyouk"
       ]
     },
     "pathParameters": None,
