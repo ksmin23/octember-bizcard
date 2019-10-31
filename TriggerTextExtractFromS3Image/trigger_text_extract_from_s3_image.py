@@ -63,7 +63,6 @@ def update_process_status(ddb_client, table_name, item):
         }
       },
       UpdateExpression="SET s3_bucket = :s3_bucket, s3_key = :s3_key, mts = :mts, #status = :status",
-      ConditionExpression = "attribute_not_exists(image_id) OR mts < :mts",
       ExpressionAttributeNames={
         '#status': 'status'
       },

@@ -116,7 +116,6 @@ def update_process_status(ddb_client, table_name, item):
         }
       },
       UpdateExpression="SET s3_bucket = :s3_bucket, s3_key = :s3_key, mts = :mts, #status = :status",
-      ConditionExpression = "attribute_not_exists(image_id) OR mts < :mts",
       ExpressionAttributeNames={
         '#status': 'status'
       },
@@ -142,6 +141,7 @@ def update_process_status(ddb_client, table_name, item):
     print('[DEBUG]', res, file=sys.stderr)
   except Exception as ex:
     traceback.print_exc()
+    print('[ERROR]', res, file=sys.stderr)
     raise ex
 
 
@@ -204,7 +204,7 @@ def lambda_handler(event, context):
 
 if __name__ == '__main__':
   kinesis_data = [
-    '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/sungmk_20191025_1622.jpg"}''',
+    '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/sungmk_20191029.jpg"}''',
   ]
 
   records = [{
