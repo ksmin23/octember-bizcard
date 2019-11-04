@@ -6,6 +6,7 @@ import sys
 import json
 import os
 import base64
+import time
 import traceback
 import random
 import hashlib
@@ -98,12 +99,18 @@ def upsert_person(g, person):
     from_person_vertex = get_person(g, _from_person_id)
     to_person_vertex = get_person(g, _to_person_id)
     weight = 1.0
-    if g.V(from_person_vertex).outE('knows').filter(__.inV().is_(to_person_vertex)).toList():
-      print('[DEBUG] Updating relationship', file=sys.stderr)
-      g.V(from_person_vertex).outE('knows').filter(__.inV().is_(to_person_vertex)).property('weight', weight).next()
-    else:
-      print('[DEBUG] Creating relationship', file=sys.stderr)
-      g.V(from_person_vertex).addE('knows').to(to_person_vertex).property('weight', weight).next()
+    for _ in range(3):
+      try:
+        if g.V(from_person_vertex).outE('knows').filter(__.inV().is_(to_person_vertex)).toList():
+          print('[DEBUG] Updating relationship: [{} -> {}]'.format(_from_person_id, _to_person_id), file=sys.stderr)
+          g.V(from_person_vertex).outE('knows').filter(__.inV().is_(to_person_vertex)).property('weight', weight).next()
+        else:
+          print('[DEBUG] Creating relationship: [{} -> {}]'.format(_from_person_id, _to_person_id), file=sys.stderr)
+          g.V(from_person_vertex).addE('knows').to(to_person_vertex).property('weight', weight).next()
+        break
+      except Exception as ex:
+        traceback.print_exc()
+        time.sleep(0.01)
 
 
 def _print_all_vertices(g):
