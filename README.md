@@ -6,6 +6,18 @@
 
 ![octember-architecture](octember-arch.png)
 
+### Lambda Functions Overview
+
+| Name | Description | Event source | Role | Etc |
+|:----:|-------------|--------------|------|-----|
+| TriggerTextExtractFromS3Image | TBD | s3 object creation | s3, dynamodb | ETL |
+| GetTextFromS3Image | TBD | kinesis data stream | s3, dynamodb, kinesis, textract | ETL |
+| UpsertBizcardToES | TBD | kinesis data stream | s3, kinesis | ETL |
+| UpsertBizcardToGraphDB | TBD | kinesis data stream | s3, kinesis | ETL |
+| SearchBizcard | TBD | api gateway | | proxy server |
+| RecommendBizcard | TBD | api gateway | | proxy server |
+| CustomAuthorizer | TBD |  | | api gateway custom authorizer |
+
 ### References & Tips
 
 ##### Lambda
