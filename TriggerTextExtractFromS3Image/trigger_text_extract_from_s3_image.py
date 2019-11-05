@@ -32,6 +32,7 @@ def write_records_to_kinesis(kinesis_client, kinesis_stream_name, records):
 
   MAX_RETRY_COUNT = 3
 
+  print("[DEBUG] try to write_records_to_kinesis", response, file=sys.stderr)
   record_list = gen_records()
   for _ in range(MAX_RETRY_COUNT):
     try:
@@ -84,6 +85,7 @@ def update_process_status(ddb_client, table_name, item):
     return response
 
   try:
+    print("[DEBUG] try to update_process_status", response, file=sys.stderr)
     res = ddb_update_item()
     print('[DEBUG]', res, file=sys.stderr)
   except Exception as ex:
@@ -101,7 +103,7 @@ def lambda_handler(event, context):
       key = urllib.parse.unquote_plus(record['s3']['object']['key'], encoding='utf-8')
 
       record = {'s3_bucket': bucket, 's3_key': key}
-      print("[INFO]", record, file=sys.stderr)
+      print("[INFO] object created: ", record, file=sys.stderr)
       write_records_to_kinesis(kinesis_client, KINESIS_STREAM_NAME, [record])
       update_process_status(ddb_client, DDB_TABLE_NAME, {'s3_bucket': bucket, 's3_key': key, 'status': 'START'})
     except Exception as ex:
