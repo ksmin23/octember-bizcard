@@ -103,6 +103,7 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+.idea/
 bin/
 lib64
 pyvenv.cfg
