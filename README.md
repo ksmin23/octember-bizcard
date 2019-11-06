@@ -127,7 +127,7 @@
 | Vertex Label | Property | Description |
 |--------------|----------|-------------|
 | person | id, name, email, phone_number, job_title, company | biz card에 있는 인물 정보 |
-| person | `{"id": "3858f622", "name": "Foo Bar", "_name": "foo bar", "email": "foobar@amazon.com", "phone_number": "(+82 10) 1025 7049", "job_title": "Solutions Architect", "company": "aws"}` | |
+| person | <pre>{<br/>"id": "3858f622",<br/>"name": "Foo Bar",<br/>"_name": "foo bar",<br/>"email": "foobar@amazon.com",<br/>"phone_number": "(+82 10) 1025 7049",<br/>"job_title": "Solutions Architect",<br/>"company": "aws"<br/>}</pre> | |
 
 - Edge
 
