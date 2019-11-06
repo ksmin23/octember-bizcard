@@ -6,6 +6,108 @@
 
 ![octember-architecture](octember-arch.png)
 
+### RESTful API Specification
+##### Image upload
+- Request
+- Response
+
+##### Search
+- Request
+  - GET
+    ```
+    - /v1/search?query=isv
+    ```
+
+    | Key | Description | Required(Yes/No) | Data Type |
+    |-----|-------------|------------------|-----------|
+    | query | 검색 질의어 (name, job title, company, address) | Yes | String |
+    | user | 검색 결과 필터링 조건 (biz card를 등록한 user id) | No | String |
+    | limit | 검색 결과 개수 (기본 값: 10) | No | Integer |
+
+  - ex)
+      ```
+      curl -X GET "https://gfrgyj029q.execute-api.us-east-1.amazonaws.com/v1/search?query=architect&limit=2"
+      ```
+
+- Response
+  - meta 데이터
+
+    | Key | Description | Data Type |
+    |-----|-------------|-----------|
+    | _index | Elasticsearch Index 이름 | String |
+    | _type | Elasticsearch Type 이름 | String |
+    | _id | 문서 id | String |
+    | _score | 검색 결과 Relevance 점수 | String |
+    | _source | | JSON |
+
+   - _source 데이터
+
+    | Key | Description | Data Type |
+    |-----|-------------|-----------|
+    | doc_id | 문서 id | String |
+    | name | 이름 | String |
+    | phone_number | 전화 번호 | String |
+    | email | email 주소 | String |
+    | job_title | 회사 직함 | String |
+    | company | 회사 이름 | String |
+    | addr | 회사 주소 | String |
+    | is_alive | 문서 삭제 여부 플래그(0: 삭제, 1: 검색 가능한 문서) | Integer |
+    | owner | 명함 등록 사용자 id | String |
+    | image_id | 명함 이미지 파일 이름 | String |
+    | content_id | 중복 문서 제거를 위한 문서 내용 id | String |
+    | created_at | 문서 생성 시간 | String |
+
+  - ex)
+    ```
+    [
+        {
+            "_index": "octember_bizcard",
+            "_type": "bizcard",
+            "_id": "dfb6c487",
+            "_score": 0.5619609,
+            "_source": {
+                "addr": "508, Nonhyeon-ro, Gangnam-gu Seoul, 06141, Rep. of KOREA",
+                "email": "foo@amazon.com",
+                "phone_number": "(+82 10) 2135 1294 ",
+                "company": "aws",
+                "name": "Foo Lee",
+                "job_title": "Solutions Architect",
+                "created_at": "2019-11-05T05:20:24Z",
+                "doc_id": "dfb6c487",
+                "image_id": "bar_s20191101_125236.jpg",
+                "owner": "bar",
+                "is_alive": 1,
+                "content_id": "e2c266fc"
+            }
+        },
+        {
+            "_index": "octember_bizcard",
+            "_type": "bizcard",
+            "_id": "8a78483a",
+            "_score": 0.43445712,
+            "_source": {
+                "addr": "12Floor GS Tower, 508 Nonhyeon-ro Gangnam-gu, Seoul, Korea",
+                "email": "bar@amazon.com",
+                "phone_number": "(+82 10) 7843 3795 ",
+                "company": "aws",
+                "name": "Bar Kim",
+                "job_title": "ISV Partner Solutions Architect",
+                "created_at": "2019-11-05T05:18:28Z",
+                "doc_id": "8a78483a",
+                "image_id": "foo_j20191101_125250.jpg",
+                "owner": "foo",
+                "is_alive": 1,
+                "content_id": "3064ab8c"
+            }
+        }
+    ]
+    ```
+
+##### PYMK(People You May Know)
+- Request
+- Response
+
+
 ### Lambda Functions Overview
 
 | Name | Description | Event Source | IAM Role | VPC | Etc |
