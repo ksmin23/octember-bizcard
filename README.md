@@ -8,7 +8,7 @@
 
 ### Lambda Functions Overview
 
-| Name | Description | Event source | Role | VPC | Etc |
+| Name | Description | Event Source | IAM Role | VPC | Etc |
 |:----:|-------------|--------------|------|-----|-----|
 | TriggerTextExtractFromS3Image | biz card 이미지가 s3에 등록되면, text 데이터 추출 작업을 실행 시키는 작업 | S3 ObjectCreated Event | DynamoDB Read/Write, Kinesis Data Stream Read/Write | No VPC | ETL |
 | GetTextFromS3Image | textract를 이용해서 biz card 이미지에서 text 데이터를 추출하는 작업 | Kinesis Data Stream | S3 Read/Write, DynamoDB Read/Write, Kinesis Data Stream Read/Write, Textract | | ETL |
@@ -17,6 +17,125 @@
 | SearchBizcard | biz card를 검색하기 위한 검색 서버 | API Gateway | | | Proxy Server |
 | RecommendBizcard | PYMK(People You May Know)를 추천해주는 서버 | API Gateway | | | Proxy Server |
 | CustomAuthorizer | 사용자 인증 서버 |  | | | API Gateway custom authorizer |
+
+### Data Specification
+
+##### S3에 업로드할 biz card image 파일 이름 형식
+- `{user_id}_{image_id}.jpg`
+- ex) foobar_i592134.jpg
+
+##### `GetTextFromS3Image` In/Output Data
+- Input
+  - `{"s3_bucket": "{bucket name}", "s3_key": "{object key}"}`
+  - ex) `{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/foobar_i592134.jpg"}`
+- Output
+  -  json data format  
+      ```
+       {
+        "s3_bucket": "{bucket name}",
+        "s3_key": "{object key}",
+        "owner": "{user_id}",
+        "data": {
+          "addr": "{address}",
+          "email": "{email address}",
+          "phone_number": "{phone number}",
+          "company": "{company name}",
+          "name": "{full name}",
+          "job_title": "{job title}",
+          "created_at": "{created datetime}"
+         }
+       }
+       ```
+  - ex) 
+      ```
+       {
+        "s3_bucket": "octember-use1",
+        "s3_key": "bizcard-raw-img/foobar_i592134.jpg",
+        "owner": "foobar",
+        "data": {
+          "addr": "12Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea",
+          "email": "foobar@amazon.com",
+          "phone_number": "(+82 10) 1025 7049",
+          "company": "aws",
+          "name": "Foo Bar",
+          "job_title": "Solutions Architect",
+          "created_at": "2019-10-25T01:12:54Z"
+         }
+       }
+       ```
+
+##### `UpsertBizcardToES` In/Output Data
+- Input
+  - `GetTextFromS3Image` output data 참고
+- Output
+  -  json data format  
+      ```
+       {
+         "doc_id": "md5({image file name})",
+         "image_id": "{image file name}",
+         "is_alive": {0 - dead, 1 - alive(default)},
+         "addr": "{address}",
+         "email": "{email address}",
+         "phone_number": "{phone number}",
+         "company": "{company name}",
+         "name": "{full name}",
+         "job_title": "{job title}",
+         "created_at": "{created datetime}"
+       }
+       ```
+  - ex) 
+      ```
+       {
+         "doc_id": "21cf827e",
+         "image_id": "foobar_i592134.jpg",
+         "is_alive": 1,
+         "addr": "12Floor GS Tower, 508 Nonhyeon-ro, Gangnam-gu, Seoul 06141, Korea",
+         "email": "foobar@amazon.com",
+         "phone_number": "(+82 10) 1025 7049",
+         "company": "aws",
+         "name": "Foo Bar",
+         "job_title": "Solutions Architect",
+         "created_at": "2019-10-25T01:12:54Z"
+       }
+       ```
+
+##### `UpsertBizcardToGraphDB` In/Output Data
+- Input
+  - `GetTextFromS3Image` output data 참고
+- Output
+  - Neptune Schema 참고
+
+##### S3 Bucket 및 Directory 구조
+
+| Bucket | Folder | Description |
+|--------|--------|-------------|
+| {bucket name} | bizcard-raw-img | 사용자가 업로드한 biz card image 원본 저장소 | 
+| {bucket name} | bizcard-by-user/{user_id} | 업로드된 biz card image를 사용자별로 별도로 보관하는 저장소 |
+| {bucket name} | bizcard-text/{YYYY}/{mm}/{dd}/{HH} | biz card image에서 추출한 text 데이터 저장소; 검색을 위한 재색인 및 배치 형태의 텍스트 분석을 위한 백업 저장소 |
+
+##### DynamoDB Schema
+
+| primary key(partition key) | s3_bucket | s3_key | mts | status |
+|----------------------------|-----------|--------|-----|--------|
+| {user_id}_{image_id}.jpg | s3 bucket | s3 object key | last modified time(yyyymmddHHMMSS) | processing status {START, PROCESSING, END} |
+| foobar_i592134.jpg | octember-use1 | bizcard-raw-img/foobar_i592134.jpg | 20191025011254 | END |
+
+##### Neptune Schema
+
+- Vertex
+
+| Vertex Label | Property | Description |
+|--------------|----------|-------------|
+| person | id, name, email, phone_number, job_title, company | biz card에 있는 인물 정보 |
+| person | `{"id": "3858f622", "name": "Foo Bar", "_name": "foo bar", "email": "foobar@amazon.com", "phone_number": "(+82 10) 1025 7049", "job_title": "Solutions Architect", "company": "aws"}` | |
+
+- Edge
+
+| Edge Label | Property | Description |
+|--------------|----------|-------------|
+| knows | weight | biz card를 주고 받은 사람들 간의 관계 (weight: 관계의 중요도) |
+| knows | {"weight": 1.0} | |
+
 
 ### References & Tips
 
