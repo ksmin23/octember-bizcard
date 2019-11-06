@@ -105,8 +105,73 @@
 
 ##### PYMK(People You May Know)
 - Request
-- Response
+  - GET
+    ```
+    - /v1/pymk?user=foo%20bar
+    ```
 
+    | Key | Description | Required(Yes/No) | Data Type |
+    |-----|-------------|------------------|-----------|
+    | user | 인맥 추천을 받으려는 사용자 이름 | Yes | String |
+
+  - ex)
+      ```
+      curl -X GET "https://y2xmtfbduf.execute-api.us-east-1.amazonaws.com/v1/pymk?user=foo%20bar"
+      ```
+
+- Response
+  - body 데이터
+
+    | Key | Description | Data Type |
+    |-----|-------------|-----------|
+    | name | 이름 | String |
+    | phone_number | 전화 번호 | String |
+    | email | email 주소 | String |
+    | job_title | 회사 직함 | String |
+    | company | 회사 이름 | String |
+    | score | 인맥 추천 점수 | Float |
+
+  - ex)
+    ```
+    [
+        {
+            "name": [
+                "Bar Lee"
+            ],
+            "phone_number": [
+                "(+82 10) 3025 7502 "
+            ],
+            "company": [
+                "aws"
+            ],
+            "job_title": [
+                "Solutions Architect"
+            ],
+            "email": [
+                "bar@amazon.com"
+            ],
+            "score": 4.0
+        },
+        {
+            "name": [
+                "Joon Kim"
+            ],
+            "phone_number": [
+                "(+82 10) 7315 3970 "
+            ],
+            "company": [
+                "aws"
+            ],
+            "job_title": [
+                "Partner Solutions Architect"
+            ],
+            "email": [
+                "joon@amazon.com"
+            ],
+            "score": 3.0
+        }
+    ]
+    ```
 
 ### Lambda Functions Overview
 
@@ -131,7 +196,7 @@
   - `{"s3_bucket": "{bucket name}", "s3_key": "{object key}"}`
   - ex) `{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/foobar_i592134.jpg"}`
 - Output
-  -  json data format  
+  - json data format
       ```
        {
         "s3_bucket": "{bucket name}",
@@ -170,7 +235,7 @@
 - Input
   - `GetTextFromS3Image` output data 참고
 - Output
-  -  json data format  
+  - json data format
       ```
        {
          "doc_id": "md5({image file name})",
@@ -185,7 +250,7 @@
          "created_at": "{created datetime}"
        }
        ```
-  - ex) 
+  - ex)
       ```
        {
          "doc_id": "21cf827e",
@@ -211,7 +276,7 @@
 
 | Bucket | Folder | Description |
 |--------|--------|-------------|
-| {bucket name} | bizcard-raw-img | 사용자가 업로드한 biz card image 원본 저장소 | 
+| {bucket name} | bizcard-raw-img | 사용자가 업로드한 biz card image 원본 저장소 |
 | {bucket name} | bizcard-by-user/{user_id} | 업로드된 biz card image를 사용자별로 별도로 보관하는 저장소 |
 | {bucket name} | bizcard-text/{YYYY}/{mm}/{dd}/{HH} | biz card image에서 추출한 text 데이터 저장소; 검색을 위한 재색인 및 배치 형태의 텍스트 분석을 위한 백업 저장소 |
 
