@@ -40,7 +40,7 @@
     | _score | 검색 결과 Relevance 점수 | String |
     | _source | | JSON |
 
-   - _source 데이터
+  - _source 데이터
 
     | Key | Description | Data Type |
     |-----|-------------|-----------|
