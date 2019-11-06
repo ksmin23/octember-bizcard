@@ -16,7 +16,7 @@
 | UpsertBizcardToGraphDB | biz card의 text 데이터를 graph database에 load 하는 작업  | Kinesis Data Stream | Kinesis Data Stream Read | | ETL |
 | SearchBizcard | biz card를 검색하기 위한 검색 서버 | API Gateway | | | Proxy Server |
 | RecommendBizcard | PYMK(People You May Know)를 추천해주는 서버 | API Gateway | | | Proxy Server |
-| CustomAuthorizer | 사용자 인증 서버 |  | | | API Gateway custom authorizer |
+| CustomAuthorizer | 사용자 인증 서버 (Optional) |  | | | API Gateway custom authorizer |
 
 ### Data Specification
 
