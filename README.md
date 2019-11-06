@@ -112,7 +112,7 @@
 
     | Key | Description | Required(Yes/No) | Data Type |
     |-----|-------------|------------------|-----------|
-    | user | 인맥 추천을 받으려는 사용자 이름 | Yes | String |
+    | user | 인맥 추천을 받고자 하는 사용자 이름 | Yes | String |
 
   - ex)
       ```
