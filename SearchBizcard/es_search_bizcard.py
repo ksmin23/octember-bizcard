@@ -67,7 +67,8 @@ def lambda_handler(event, context):
                 "fields": [
                   "name^3",
                   "company",
-                  "job_title"
+                  "job_title",
+                  "addr"
                 ]
               }
             }
