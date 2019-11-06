@@ -9,7 +9,24 @@
 ### RESTful API Specification
 ##### Image upload
 - Request
+  - PUT
+    ```
+    - /v1/{bucket}/{object}
+    ```
+
+    | URL Path parameters | Description | Required(Yes/No) | Data Type |
+    |---------------------|-------------|------------------|-----------|
+    | bucket | s3 bucket 이름 | Yes | String |
+    | object | s3 object 이름 | Yes | String |
+
+  - ex)
+    ```
+    curl -X PUT "https://t2e7cpvqvu.execute-api.us-east-1.amazonaws.com/v1/octember-use1/bizcard-raw-img%2Fbar_s20191101_125236.jpg" \
+         --data @bar_s20191101_125236.jpg
+    ```
+
 - Response
+  - No Data
 
 ##### Search
 - Request
