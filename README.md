@@ -124,16 +124,17 @@
 - Request
   - GET
     ```
-    - /v1/pymk?user=foo%20bar
+    - /v1/pymk?user=foo%20bar&limit=10
     ```
 
     | Key | Description | Required(Yes/No) | Data Type |
     |-----|-------------|------------------|-----------|
     | user | 인맥 추천을 받고자 하는 사용자 이름 | Yes | String |
+    | limit | 인맥 추천 결과 개수 (기본 값: 10) | No | Integer |
 
   - ex)
       ```
-      curl -X GET "https://y2xmtfbduf.execute-api.us-east-1.amazonaws.com/v1/pymk?user=foo%20bar"
+      curl -X GET "https://y2xmtfbduf.execute-api.us-east-1.amazonaws.com/v1/pymk?user=foo%20bar&limit=2"
       ```
 
 - Response

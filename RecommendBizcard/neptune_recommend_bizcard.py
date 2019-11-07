@@ -53,7 +53,7 @@ def graph_traversal(neptune_endpoint=None, neptune_port=NEPTUNE_PORT, show_endpo
   return traversal().withRemote(connection)
 
 
-def people_you_may_know(g, user_name):
+def people_you_may_know(g, user_name, limit=10):
   from gremlin_python.process.traversal import Scope, Column, Order
 
   recommendations = (g.V().hasLabel('person').has('_name', user_name.lower()).as_('person').
@@ -64,8 +64,9 @@ def people_you_may_know(g, user_name):
     order(Scope.local).by(Column.values, Order.decr).
     next())
 
+  vertex_scores = [(key, score) for key, score in recommendations.items()][:limit]
   res = []
-  for key, score in recommendations.items():
+  for key, score in vertex_scores:
     value = {k: v for k, v in g.V(key).valueMap().next().items() if not (k == 'id' or k.startswith('_'))}
     value['score'] = float(score)
     res.append(value)
@@ -80,7 +81,8 @@ def lambda_handler(event, context):
   graph_db = NEPTUNE_CONN
  
   try:
-    user_name = event["queryStringParameters"]["user"]
+    user_name = event['queryStringParameters']['user']
+    limit = int(event['queryStringParameters'].get('limit', 10))
 
     query_hash_code = hashlib.md5(user_name.lower().encode('utf-8')).hexdigest()[:8]
     query_id = 'pymk:query_id:{}'.format(query_hash_code)
@@ -89,7 +91,7 @@ def lambda_handler(event, context):
     results = redis_client.get(query_id)
     results = results.decode('utf-8') if results != None else None
     if results is None:
-      ret = people_you_may_know(graph_db, user_name)
+      ret = people_you_may_know(graph_db, user_name, limit)
       total_count = len(ret)
       print("[INFO] Got {} Hits:".format(total_count), file=sys.stderr)
       results = json.dumps(ret)
