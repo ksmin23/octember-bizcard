@@ -72,6 +72,7 @@ def lambda_handler(event, context):
     if user_name:
       es_query_body['query']['bool']['filter'] = [{"term": {"owner": user_name}}]
     print('[DEBUG] elasticsearch query: {}'.format(json.dumps(es_query_body)))
+    assert query_keywords or user_name
 
     query_hash_code = hashlib.md5(json.dumps(es_query_body).encode('utf-8')).hexdigest()[:8]
     query_id = 'es:query_id:{}:limit:{}'.format(query_hash_code, limit)
@@ -163,7 +164,7 @@ if __name__ == '__main__':
   }
 
   query_params_list = [{"query": "sungmin", "user": "hyouk"},
-    {"query": "kim"}, {"user": "hyouk"}]
+    {"query": "kim"}, {"user": "hyouk"}, {}]
 
   for params in query_params_list:
     event['queryStringParameters'] = params
