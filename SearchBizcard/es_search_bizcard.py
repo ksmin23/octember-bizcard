@@ -52,33 +52,26 @@ def lambda_handler(event, context):
   try:
     query_params = event['queryStringParameters']
     query_keywords = query_params.get('query', '')
-    assert query_keywords
 
     limit = int(query_params.get('limit', '10'))
     user_name = query_params.get('user', '')
 
-    es_query_body = {
-      "query": {
-        "bool": {
-          "must": [
-            {
-              "multi_match": {
-                "query": query_keywords,
-                "fields": [
-                  "name^3",
-                  "company",
-                  "job_title",
-                  "addr"
-                ]
-              }
-            }
-          ]
+    es_query_body = {"query": {"bool": {}}}
+
+    if query_keywords:
+      es_query_body['query']['bool']['must'] = [{
+          "multi_match": {
+            "query": query_keywords,
+            "fields": [
+              "name^3", "company", "job_title", "addr"
+            ]
+          }
         }
-      }
-    }
+      ]
 
     if user_name:
       es_query_body['query']['bool']['filter'] = [{"term": {"owner": user_name}}]
+    print('[DEBUG] elasticsearch query: {}'.format(json.dumps(es_query_body)))
 
     query_hash_code = hashlib.md5(json.dumps(es_query_body).encode('utf-8')).hexdigest()[:8]
     query_id = 'es:query_id:{}:limit:{}'.format(query_hash_code, limit)
@@ -121,7 +114,7 @@ if __name__ == '__main__':
     "multiValueHeaders": None,
     "queryStringParameters": {
       "query": "sungmin",
-      "user": "hyoukxxx"
+      "user": "hyouk"
     },
     "multiValueQueryStringParameters": {
       "query": [
@@ -169,6 +162,13 @@ if __name__ == '__main__':
     "isBase64Encoded": False
   }
 
-  res = lambda_handler(event, {})
-  pprint.pprint(res)
+  query_params_list = [{"query": "sungmin", "user": "hyouk"},
+    {"query": "kim"}, {"user": "hyouk"}]
+
+  for params in query_params_list:
+    event['queryStringParameters'] = params
+    event['multiValueQueryStringParameter'] = {k: [v] for k, v in params.items()}
+
+    res = lambda_handler(event, {})
+    pprint.pprint(res)
 
