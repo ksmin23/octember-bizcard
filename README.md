@@ -32,14 +32,16 @@
 - Request
   - GET
     ```
-    - /v1/search?query=isv
+    - /v1/search?query=isv&user=foobar&limit=10
     ```
 
     | Key | Description | Required(Yes/No) | Data Type |
     |-----|-------------|------------------|-----------|
-    | query | 검색 질의어 (name, job title, company, address) | Yes | String |
+    | query | 검색 질의어 (name, job title, company, address) | No | String |
     | user | 검색 결과 필터링 조건 (biz card를 등록한 user id) | No | String |
     | limit | 검색 결과 개수 (기본 값: 10) | No | Integer |
+    
+    - (&#33;) **query** 혹은 **user** 중 하나의 값은 반드시 필요함
 
   - ex)
       ```
