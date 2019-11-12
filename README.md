@@ -220,12 +220,13 @@
 
 ##### S3에 업로드할 biz card image 파일 이름 형식
 - `{user_id}_{image_id}.jpg`
-- ex) foobar_i592134.jpg
+  > ex) foobar_i592134.jpg
+- `{user_id}` 는 octember 서비스에 가입한 회원 아이디
 
 ##### `GetTextFromS3Image` In/Output Data
 - Input
   - `{"s3_bucket": "{bucket name}", "s3_key": "{object key}"}`
-  - ex) `{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/foobar_i592134.jpg"}`
+    > ex) `{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/foobar_i592134.jpg"}`
 - Output
   - json data format
       ```
