@@ -335,6 +335,80 @@
 | knows | {"weight": 1.0} | |
 
 
+### How To Build
+##### Image upload
+1. s3 bucket을 생성함; 예를 들어서 **us-east-1** 리전에 **octember-use1** 라는 이름의 bucket을 생성함
+2. 생성된 s3 bucket 안에 **bizcard-raw-img**, **bizcard-by-user** 디렉터리를 생성함
+    ```
+    $ aws s3 ls s3://octember-use1/
+      PRE bizcard-by-user/
+      PRE bizcard-raw-img/
+    ```
+3. [API Gateway + S3](#api-gateway--s3)를 참고해서 s3에 이미지를 업로드 하는 RESTful API를 생성함
+4. [Kinesis Data Stream](#kinesis-data-stream)를 참고해서 **octember-bizcard-img** 이름의 Kinesis Data Stream을 생성함
+5. [DynamoDB](#dynamodb)를 참고해서 **OctemberBizcardImg** 이름의 DynamoDB 테이블을 생성함; primary partition key를 string 타입으로 하고, 이름은 **image_id** 라고 설정함
+6. [Lambda](#lambda)를 참고해서 **TriggerTextExtractFromS3Image** 라는 lambda function을 생성하고, **TriggerTextExtractFromS3Image** 디렉터리 내의 소스 코드를 복사해서 lambda function code에 등록함
+7. **TriggerTextExtractFromS3Image** 생성 시, REGION_NAME, KINESIS_STREAM_NAME, DDB_TABLE_NAME 등의 환경 변수에 리전 이름, Kinesis Data Stream 이름, DynamoDB 테이블 이름을 알맞게 설정함<br/>
+예를 들어, 다음과 같이 환경 변수 값을 설정함
+    ``` 
+    REGION_NAME=us-east-1
+    KINESIS_STREAM_NAME=octember-bizcard-img
+    DDB_TABLE_NAME=OctemberBizcardImg
+    ```
+8. [Kinesis Data Stream](#kinesis-data-stream)를 참고해서 **octember-bizcard-text** 이름으로 Kinesis Data Stream을 생성함
+9. [Lambda](#lambda)를 참고해서 **GetTextFromS3Image** 라는 lambda function을 생성하고, **GetTextFromS3Image** 디렉터리 내의 소스 코드를 복사해서 lambda function code에 등록함
+10. **GetTextFromS3Image** 생성 시, REGION_NAME, KINESIS_STREAM_NAME, DDB_TABLE_NAME 등의 환경 변수에 리전 이름, Kinesis Data Stream 이름, DynamoDB 테이블 이름을 알맞게 설정함<br/>
+예를 들어, 다음과 같이 환경 변수 값을 설정함
+    ``` 
+    REGION_NAME=us-east-1
+    KINESIS_STREAM_NAME=octember-bizcard-text
+    DDB_TABLE_NAME=OctemberBizcardImg
+    ```
+
+##### Search
+1. [Elasticsearch Service](#elasticsearch-service)를 참고해서 VPC 내에 **octember** 라는 domain 이름으로 Elasticsearch cluster를 생성함
+2. [Kinesis Data Firehorse](#kinesis-data-firehorse)를 참고해서 Source를 **octember-bizcard-text**, Destination을 s3 bucket(예: **octember-use1**)으로 설정함<br/>
+s3 destination의 prefix를 `bizcard-text/` 로 설정함
+3. [Lambda](#lambda)를 참고해서 **UpsertBizcardToES** 라는 lambda function을 생성하고, **UpsertBizcardToES** 디렉터리 내의 소스 코드를 복사해서 lambda function code에 등록함
+4. **UpsertBizcardToES** 생성 시, REGION_NAME, ES_HOST 등의 환경 변수에 리전 이름, Elasticsearch cluster endpoint 주소를 알맞게 설정함<br/>
+예를 들어, 다음과 같이 환경 변수 값을 설정함
+    ``` 
+    REGION_NAME=us-east-1
+    ES_HOST=https://vpc-octember-ykpng6bf4qn1599enqv2f7rikf.us-east-1.es.amazonaws.com
+    ```
+5. [ElasitCache](#elasitcache)를 참고해서 검색 질의 결과를 캐싱하기 위한 캐쉬 서버를 생성함<br/>
+에를 들어 **octember-es-cache** 라는 이름의 Redis를 생성함
+6. [Lambda](#lambda)를 참고해서 **SearchBizcard** 라는 검색 서버로 사용할 lambda function을 생성하고, **SearchBizcard** 디렉터리 내의 소스 코드를 복사해서 lambda function code에 등록함<br/>
+7. **SearchBizcard** 생성 시, REGION_NAME, ES_HOST, ELASTICACHE_HOST 등의 환경 변수에 리전 이름, Elasticsearch cluster endpoint 주소, ElastiCache endpoint 주소를 알맞게 설정함<br/>
+예를 들어, 다음과 같이 환경 변수 값을 설정함
+    ```
+    REGION_NAME=us-east-1
+    ES_HOST=https://vpc-octember-ykpng6bf4qn1599enqv2f7rikf.us-east-1.es.amazonaws.com
+    ELASTICACHE_HOST=octember-es-cache.xqep4c.0001.use1.cache.amazonaws.com
+    ```
+8. 검색 서버를 만들기 위해서 [API Gateway + Lambda](#api-gateway--lambda)를 참고해서 api gateway와 **SearchBizcard** 라는 lambda function을 동합한 RESTful API를 생성함
+
+##### PYMK
+1. [Neptune](#neptune)를 참고해서 VPC 내에 **octember-bizcard** 라는 이름의 graph database를 생성함
+2. [Lambda](#lambda)를 참고해서 **UpsertBizcardToGraphDB** 라는 lambda function을 생성하고, **UpsertBizcardToGraphDB** 디렉터리 내의 소스 코드를 복사해서 lambda function code에 등록함
+3. **UpsertBizcardToGraphDB** 생성 시, REGION_NAME, NEPTUNE_ENDPOINT 등의 환경 변수에 리전 이름, Neptune endpoint 주소를 알맞게 설정함<br/>
+예를 들어, 다음과 같이 환경 변수 값을 설정함
+    ``` 
+    REGION_NAME=us-east-1
+    NEPTUNE_ENDPOINT=octember-bizcard.64ocu93lfjfj.us-east-1.neptune.amazonaws.com
+    ```
+4. [ElasitCache](#elasitcache)를 참고해서 인맥 추천 결과를 캐싱하기 위한 캐쉬 서버를 생성함<br/>
+에를 들어 **octember-neptune-cache** 라는 이름의 Redis를 생성함
+5. [Lambda](#lambda)를 참고해서 **RecommendBizcard** 라는 검색 서버로 사용할 lambda function을 생성하고, **RecommendBizcard** 디렉터리 내의 소스 코드를 복사해서 lambda function code에 등록함<br/>
+6. **RecommendBizcard** 생성 시, REGION_NAME, NEPTUNE_ENDPOINT, ELASTICACHE_HOST 등의 환경 변수에 리전 이름, Neptune endpoint 주소, ElastiCache endpoint 주소를 알맞게 설정함<br/>
+예를 들어, 다음과 같이 환경 변수 값을 설정함
+    ```
+    REGION_NAME=us-east-1
+    NEPTUNE_ENDPOINT=octember-bizcard.64ocu93lfjfj.us-east-1.neptune.amazonaws.com
+    ELASTICACHE_HOST=octember-neptune-cache.2rb5x2.0001.use1.cache.amazonaws.com
+    ```
+7. 인맥 추천 서버를 만들기 위해서 [API Gateway + Lambda](#api-gateway--lambda)를 참고해서 api gateway와 **RecommendBizcard** 라는 lambda function을 동합한 RESTful API를 생성함
+
 ### References & Tips
 
 ##### Lambda
@@ -371,7 +445,7 @@
 ##### Elasticsearch Service
 - [자습서: Amazon Elasticsearch Service를 사용하여 검색 애플리케이션 생성](https://docs.aws.amazon.com/ko_kr/elasticsearch-service/latest/developerguide/search-example.html)
 
-##### Dynamodb
+##### DynamoDB
 - [DynamoDB 시작하기](https://docs.aws.amazon.com/ko_kr/amazondynamodb/latest/developerguide/GettingStartedDynamoDB.html)
 
 ##### S3(Simple Storage Service)
