@@ -475,5 +475,6 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
 
 ### Limits
 - Amazon Textract 서비스가 지원하는 언어가 제한적이기 때문에 확인 후 사용이 필요함 (한국어는 현재 2019-11-11 까지 지원되지 않고 있음)
+- 명함 이미지(jpeg/png) 크기는 5MB 이하여야함
 - Amazon Kinesis Data Firehose는 현재 (2019-11-11) VPC 내에 있는 Elasticsearch domains에 데이터를 loading 하는 것은 지원하고 있지 않음
   > Note: Amazon Kinesis Data Firehose currently doesn't support VPC domains.
