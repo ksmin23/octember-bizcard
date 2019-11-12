@@ -1,6 +1,6 @@
 # Octember<sup>TM</sup>
 
-- OCR(Optical Character Reconition) 기술을 활용한 명항 관리 및 Graph database(Neptune)을 이용한 인맥 추천 서비스
+- OCR(Optical Character Reconition) 기술을 활용한 명함 관리 및 Graph database(Neptune)을 이용한 인맥 추천 서비스
 
 ### Architecture
 
