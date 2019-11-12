@@ -3,8 +3,19 @@
 - OCR(Optical Character Reconition) 기술을 활용한 명함 관리 및 Graph database(Neptune)을 이용한 인맥 추천 서비스
 
 ### Architecture
-
 ![octember-architecture](octember-arch.png)
+
+##### Key AWS Services
+- API Gateway
+- Lambda Function
+- Kinesis Data Stream
+- Kinesis Data Firehorese
+- Elasticsearch Service
+- ElastiCache
+- DynamoDB
+- Neptune
+- S3
+- Textract
 
 ### RESTful API Specification
 ##### Image upload
