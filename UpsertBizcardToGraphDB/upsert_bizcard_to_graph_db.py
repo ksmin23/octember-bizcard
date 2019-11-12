@@ -21,7 +21,7 @@ from gremlin_python.driver.driver_remote_connection import DriverRemoteConnectio
 random.seed(47)
 
 AWS_REGION = os.getenv('REGION_NAME', 'us-east-1')
-NEPTUNE_ENDPOINT = os.getenv('NEPTUNE_ENDPOINT', 'octember-bizcard-cluster.cluster-cnrh6fettief.us-east-1.neptune.amazonaws.com')
+NEPTUNE_ENDPOINT = os.getenv('NEPTUNE_ENDPOINT')
 NEPTUNE_PORT = int(os.getenv('NEPTUNE_PORT', '8182'))
 
 

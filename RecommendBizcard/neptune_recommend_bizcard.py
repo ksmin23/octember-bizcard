@@ -21,12 +21,12 @@ from gremlin_python.process.anonymous_traversal import traversal
 from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
 
 AWS_REGION = os.getenv('REGION_NAME', 'us-east-1')
-NEPTUNE_ENDPOINT = os.getenv('NEPTUNE_ENDPOINT', 'octember-bizcard-cluster.cluster-ro-cnrh6fettief.us-east-1.neptune.amazonaws.com')
+NEPTUNE_ENDPOINT = os.getenv('NEPTUNE_ENDPOINT')
 NEPTUNE_PORT = int(os.getenv('NEPTUNE_PORT', '8182'))
 
 NEPTUNE_CONN = None
 
-ELASTICACHE_HOST = os.getenv('ELASTICACHE_HOST', 'octember-neptune-cache.81kuqj.0001.use1.cache.amazonaws.com')
+ELASTICACHE_HOST = os.getenv('ELASTICACHE_HOST')
 redis_client = redis.Redis(host=ELASTICACHE_HOST, port=6379, db=0)
 
 def graph_traversal(neptune_endpoint=None, neptune_port=NEPTUNE_PORT, show_endpoint=True, connection=None):

@@ -15,7 +15,7 @@ from elasticsearch import RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 
 ES_INDEX, ES_TYPE = (os.getenv('ES_INDEX', 'octember_bizcard'), os.getenv('ES_TYPE', 'bizcard'))
-ES_HOST = os.getenv('ES_HOST', 'vpc-octember-kfwwunjrm422d44nr7dnhvjsw4.us-east-1.es.amazonaws.com')
+ES_HOST = os.getenv('ES_HOST')
 
 AWS_REGION = os.getenv('REGION_NAME', 'us-east-1')
 

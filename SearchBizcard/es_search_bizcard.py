@@ -15,11 +15,11 @@ from elasticsearch import RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 import redis
 
-ELASTICACHE_HOST = os.getenv('ELASTICACHE_HOST', 'octember-es-cache.81kuqj.0001.use1.cache.amazonaws.com')
+ELASTICACHE_HOST = os.getenv('ELASTICACHE_HOST')
 redis_client = redis.Redis(host=ELASTICACHE_HOST, port=6379, db=0)
 
 ES_INDEX, ES_TYPE = (os.getenv('ES_INDEX', 'octember_bizcard'), os.getenv('ES_TYPE', 'bizcard'))
-ES_HOST = os.getenv('ES_HOST', 'vpc-octember-kfwwunjrm422d44nr7dnhvjsw4.us-east-1.es.amazonaws.com')
+ES_HOST = os.getenv('ES_HOST')
 
 AWS_REGION = os.getenv('REGION_NAME', 'us-east-1')
 
