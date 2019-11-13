@@ -479,3 +479,42 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
 - 명함 이미지(jpeg/png) 크기는 5MB 이하여야함
 - Amazon Kinesis Data Firehose는 현재 (2019-11-11) VPC 내에 있는 Elasticsearch domains에 데이터를 loading 하는 것은 지원하고 있지 않음
   > Note: Amazon Kinesis Data Firehose currently doesn't support VPC domains.
+
+### Demo
+##### 명함 이미지를 등록하는 방법
+(1) **Postman을 이용해서 이미지 업로드 API로 명함을 등록하는 방법**
+  1. Postman에서 아래 그림과 같이 Authorization 탭에서 TYPE을 AWS Signature로 선택하고, S3 Read/Write 권한을 가진 사용자의 
+ AccessKey, SecretKey를 등록하고, aws region을 설정함<br/>
+  ![octember-bizcard-img-uploader-01](resources/octember-bizcard-img-uploader-01.png)
+  2. 아래 그림과 깉이 Postman의 Body 탭에서 raw를 선택 한 후, 명함 이미지를 base64로 encoding한 값을 붙여넣고, Send 버튼을 눌러서 PUT 메소드를 실행함<br/>
+  ![octember-bizcard-img-uploader-02](resources/octember-bizcard-img-uploader-02.png)
+
+(2) **demo용 클라이언트를 사용하는 방법**
+  1. 업로드한 명함 이미지를 저장할 s3 bucket의 CORS 설정을 아래 처럼 변경함
+        ```
+        <?xml version="1.0" encoding="UTF-8"?>
+        <CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+        <CORSRule>
+            <AllowedOrigin>*</AllowedOrigin>
+            <AllowedMethod>GET</AllowedMethod>
+            <MaxAgeSeconds>3000</MaxAgeSeconds>
+            <AllowedHeader>Authorization</AllowedHeader>
+        </CORSRule>
+        <CORSRule>
+            <AllowedOrigin>*</AllowedOrigin>
+            <AllowedMethod>POST</AllowedMethod>
+            <MaxAgeSeconds>3000</MaxAgeSeconds>
+            <AllowedHeader>Authorization</AllowedHeader>
+        </CORSRule>
+        </CORSConfiguration>
+        ```
+        - ex)
+           ![octember-s3_bucket_cors_configuration](resources/octember-s3_bucket_cors_configuration.png)
+   2. https://github.com/ksmin23/s3-direct-uploader-demo 를 로컬 PC에 git clone 한 후, 설정을 변경해줘야 할 부분을 알맞게 수정함
+   3. 수정한 이후, index.html 파일을 browser로 열어서 사용함
+
+##### Demo Scenario
+1. Octember<sup>TM</sup> 사용자 자신의 명함 이미지를 하나씩 등록함
+2. Octember<sup>TM</sup> 사용자별로 각자 가지고 있는 명함 이미지를 등록함
+3. 모든 사용자가 각자의 명함 등록을 완료하면, 등록된 명함을 사용자 이름이나 직장명, 직무(Job title) 등으로 검색을 해봄
+4. 인맥 추천 api를 이용해서 Octember<sup>TM</sup> 회원에게 추천할 만한 사람을 찾아봄
