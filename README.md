@@ -13,9 +13,9 @@
 - Elasticsearch Service
 - ElastiCache
 - DynamoDB
-- Neptune
-- S3
+- Neptune (Graph database)
 - Textract
+- S3
 
 ### RESTful API Specification
 ##### Image upload
