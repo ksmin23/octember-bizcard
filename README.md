@@ -517,7 +517,13 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
    3. 수정한 이후, index.html 파일을 browser로 열어서 사용함
 
 ##### Demo Scenario
-1. Octember<sup>TM</sup> 사용자 자신의 명함 이미지를 하나씩 등록함
+
+1. Octember<sup>TM</sup> 사용자별로 자신의 명함 이미지를 하나씩 등록함
+예를 들어 resources/samples 디렉터리에서 edy_a0653895773.jpg, poby_a5411145874.jpg, pororo_a2553858703.jpg 명함 이미지를 등록함
 2. Octember<sup>TM</sup> 사용자별로 각자 가지고 있는 명함 이미지를 등록함
-3. 모든 사용자가 각자의 명함 등록을 완료하면, 등록된 명함을 사용자 이름이나 직장명, 직무(Job title) 등으로 검색을 해봄
+예를 들어 Octember<sup>TM</sup> 사용자 Edy Kim의 명함 이미지 edy_cr8677419714.jpg, edy_ha3800766762.jpg, edy_pb5411145874.jpg 을 등록한 후,
+나머지 사용자들(Poby Kim, Pororo Kim)의 명함 이미지도 등록함
+3. resources/samples 디렉터리 안에 있는 모든 명함을 등록하면, 아래와 같은 인맥 관계가 생성됨
+![demo-octember-bizcard-network.png](resources/demo-octember-bizcard-network.png)
+3. 등록된 명함을 찾기 위해서 사용자 이름이나 직장명, 직무(Job title) 등으로 검색을 해봄
 4. 인맥 추천 api를 이용해서 Octember<sup>TM</sup> 회원에게 추천할 만한 사람을 찾아봄
