@@ -31,8 +31,7 @@ def write_records_to_kinesis(kinesis_client, kinesis_stream_name, records):
     return record_list
 
   MAX_RETRY_COUNT = 3
-
-  print("[DEBUG] try to write_records_to_kinesis", response, file=sys.stderr)
+ 
   record_list = gen_records()
   for _ in range(MAX_RETRY_COUNT):
     try:
