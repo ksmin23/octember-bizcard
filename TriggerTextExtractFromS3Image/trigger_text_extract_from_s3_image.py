@@ -139,7 +139,7 @@ if __name__ == '__main__':
           "arn": "arn:aws:s3:::octember-use1"
         },
         "object": {
-          "key": "bizcard-raw-img/sungmk_bizcard.jpg",
+          "key": "bizcard-raw-img/edy_bizcard.jpg",
           "size": 638,
           "eTag": "0123456789abcdef0123456789abcdef",
           "sequencer": "0A1B2C3D4E5F678901"

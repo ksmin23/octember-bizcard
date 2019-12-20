@@ -204,7 +204,7 @@ def lambda_handler(event, context):
 
 if __name__ == '__main__':
   kinesis_data = [
-    '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/sungmk_20191029.jpg"}''',
+    '''{"s3_bucket": "octember-use1", "s3_key": "bizcard-raw-img/edy_a0653895773.jpg"}''',
   ]
 
   records = [{
