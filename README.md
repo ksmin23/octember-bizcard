@@ -486,10 +486,14 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
 - **Postman을 이용해서 이미지 업로드 API로 명함을 등록하는 방법**
 
   1. Postman에서 아래 그림과 같이 Authorization 탭에서 TYPE을 AWS Signature로 선택하고, S3 Read/Write 권한을 가진 사용자의 
- AccessKey, SecretKey를 등록하고, aws region을 설정함<br/>
+ AccessKey, SecretKey를 등록하고, AWS Region을 설정함<br/>
   ![octember-bizcard-img-uploader-01](resources/octember-bizcard-img-uploader-01.png)
-  2. 아래 그림과 깉이 Postman의 Body 탭에서 raw를 선택 한 후, 명함 이미지를 base64로 encoding한 값을 붙여넣고, Send 버튼을 눌러서 PUT 메소드를 실행함<br/>
+  2. Headers 탭을 선택하고, Key, Value를 아래 그림과 같이 추가함<br/>
   ![octember-bizcard-img-uploader-02](resources/octember-bizcard-img-uploader-02.png)
+  3. Body 탭에서 binary를 선택하고, Select File 버튼을 눌러서, 전송할 파일을 추가함<br/>
+  ![octember-bizcard-img-uploader-02](resources/octember-bizcard-img-uploader-03.png)
+  4. 전송할 이미지 파일이 추가한 후, Send 버튼을 눌러서 PUT 메소드를 실행함<br/>
+  ![octember-bizcard-img-uploader-02](resources/octember-bizcard-img-uploader-04.png)
 
 - **demo용 클라이언트를 사용하는 방법**
 
