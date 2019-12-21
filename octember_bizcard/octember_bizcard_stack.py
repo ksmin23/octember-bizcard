@@ -12,7 +12,8 @@ from aws_cdk import (
   aws_logs,
   aws_elasticsearch,
   aws_kinesisfirehose,
-  aws_elasticache
+  aws_elasticache,
+  aws_neptune
 )
 
 from aws_cdk.aws_lambda_event_sources import (
@@ -634,4 +635,63 @@ class OctemberBizcardStack(core.Stack):
         apigw.MethodResponse(status_code="500")
       ]
     )
+
+    sg_use_bizcard_graph_db = aws_ec2.SecurityGroup(self, "BizcardGraphDbClientSG",
+      vpc=vpc,
+      allow_all_outbound=True,
+      description='security group for octember bizcard graph db client',
+      security_group_name='use-octember-bizcard-neptune'
+    )
+    core.Tag.add(sg_use_bizcard_graph_db, 'Name', 'use-octember-bizcard-neptune')
+
+    sg_bizcard_graph_db = aws_ec2.SecurityGroup(self, "BizcardGraphDbSG",
+      vpc=vpc,
+      allow_all_outbound=True,
+      description='security group for octember bizcard graph db',
+      security_group_name='octember-bizcard-neptune'
+    )
+    core.Tag.add(sg_bizcard_graph_db, 'Name', 'octember-bizcard-neptune')
+
+    sg_bizcard_graph_db.add_ingress_rule(peer=sg_bizcard_graph_db, connection=aws_ec2.Port.tcp(8182), description='octember-bizcard-neptune')
+    sg_bizcard_graph_db.add_ingress_rule(peer=sg_use_bizcard_graph_db, connection=aws_ec2.Port.tcp(8182), description='use-octember-bizcard-neptune')
+
+    bizcard_graph_db_subnet_group = aws_neptune.CfnDBSubnetGroup(self, "NeptuneSubnetGroup",
+      db_subnet_group_description="subnet group for octember-bizcard-neptune",
+      subnet_ids=vpc.select_subnets(subnet_type=aws_ec2.SubnetType.PRIVATE).subnet_ids,
+      db_subnet_group_name='octember-bizcard-neptune'
+    )
+
+    bizcard_graph_db = aws_neptune.CfnDBCluster(self, "BizcardGraphDB",
+      availability_zones=vpc.availability_zones,
+      db_subnet_group_name=bizcard_graph_db_subnet_group.db_subnet_group_name,
+      db_cluster_identifier="octember-bizcard",
+      backup_retention_period=1,
+      preferred_backup_window="08:45-09:15",
+      preferred_maintenance_window="sun:18:00-sun:18:30",
+      vpc_security_group_ids=[sg_bizcard_graph_db.security_group_id]
+    )
+    bizcard_graph_db.add_depends_on(bizcard_graph_db_subnet_group)
+
+    bizcard_graph_db_instance = aws_neptune.CfnDBInstance(self, "BizcardGraphDBInstance",
+      db_instance_class="db.r5.large",
+      allow_major_version_upgrade=False,
+      auto_minor_version_upgrade=False,
+      availability_zone=vpc.availability_zones[0],
+      db_cluster_identifier=bizcard_graph_db.db_cluster_identifier,
+      db_instance_identifier="octember-bizcard",
+      preferred_maintenance_window="sun:18:00-sun:18:30"
+    )
+    bizcard_graph_db_instance.add_depends_on(bizcard_graph_db)
+
+    bizcard_graph_db_replica_instance = aws_neptune.CfnDBInstance(self, "BizcardGraphDBReplicaInstance",
+      db_instance_class="db.r5.large",
+      allow_major_version_upgrade=False,
+      auto_minor_version_upgrade=False,
+      availability_zone=vpc.availability_zones[-1],
+      db_cluster_identifier=bizcard_graph_db.db_cluster_identifier,
+      db_instance_identifier="octember-bizcard-replica",
+      preferred_maintenance_window="sun:18:00-sun:18:30"
+    )
+    bizcard_graph_db_replica_instance.add_depends_on(bizcard_graph_db)
+    bizcard_graph_db_replica_instance.add_depends_on(bizcard_graph_db_instance)
 
