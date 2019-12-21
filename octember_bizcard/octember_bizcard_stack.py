@@ -6,6 +6,15 @@ from aws_cdk import (
   aws_apigateway as apigw,
   aws_iam,
   aws_s3 as s3,
+  aws_lambda as _lambda,
+  aws_kinesis as kinesis,
+  aws_dynamodb as dynamodb,
+  aws_logs
+)
+
+from aws_cdk.aws_lambda_event_sources import (
+  S3EventSource,
+  KinesisEventSource
 )
 
 class OctemberBizcardStack(core.Stack):
@@ -225,4 +234,81 @@ class OctemberBizcardStack(core.Stack):
         'method.request.path.item': True
       }
     )
+
+    ddb_table = dynamodb.Table(self, "BizcardImageMetaInfoDdbTable",
+      table_name="OctemberBizcardImgMeta",
+      partition_key=dynamodb.Attribute(name="image_id", type=dynamodb.AttributeType.STRING),
+      billing_mode=dynamodb.BillingMode.PROVISIONED,
+      read_capacity=15,
+      write_capacity=5
+    )
+
+    img_kinesis_stream = kinesis.Stream(self, "BizcardImagePath", stream_name="octember-bizcard-image")
+
+    # create lambda function
+    trigger_textract_lambda_fn = _lambda.Function(self, "TriggerTextExtractorFromImage",
+      runtime=_lambda.Runtime.PYTHON_3_7,
+      function_name="TriggerTextExtractorFromImage",
+      handler="trigger_text_extract_from_s3_image.lambda_handler",
+      description="Trigger to extract text from an image in S3",
+      code=_lambda.Code.asset("./src/main/python/TriggerTextExtractFromS3Image"),
+      environment={
+        'REGION_NAME': kwargs['env'].region,
+        'DDB_TABLE_NAME': ddb_table.table_name,
+        'KINESIS_STREAM_NAME': img_kinesis_stream.stream_name
+      },
+      timeout=core.Duration.minutes(5)
+    )
+
+    ddb_table_rw_policy_statement = aws_iam.PolicyStatement(
+      effect=aws_iam.Effect.ALLOW,
+      resources=[ddb_table.table_arn],
+      actions=[
+        "dynamodb:BatchGetItem",
+        "dynamodb:Describe*",
+        "dynamodb:List*",
+        "dynamodb:GetItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dax:Describe*",
+        "dax:List*",
+        "dax:GetItem",
+        "dax:BatchGetItem",
+        "dax:Query",
+        "dax:Scan",
+        "dax:BatchWriteItem",
+        "dax:DeleteItem",
+        "dax:PutItem",
+        "dax:UpdateItem"
+      ]
+    )
+
+    trigger_textract_lambda_fn.add_to_role_policy(ddb_table_rw_policy_statement)
+    trigger_textract_lambda_fn.add_to_role_policy(aws_iam.PolicyStatement(
+      effect=aws_iam.Effect.ALLOW,
+      resources=[img_kinesis_stream.stream_arn],
+      actions=["kinesis:Get*",
+        "kinesis:List*",
+        "kinesis:Describe*",
+        "kinesis:PutRecord",
+        "kinesis:PutRecords"
+      ]
+    ))
+
+    # assign notification for the s3 event type (ex: OBJECT_CREATED)
+    s3_event_filter = s3.NotificationKeyFilter(prefix="bizcard-raw-img/", suffix=".jpg")
+    s3_event_source = S3EventSource(s3_bucket, events=[s3.EventType.OBJECT_CREATED], filters=[s3_event_filter])
+    trigger_textract_lambda_fn.add_event_source(s3_event_source)
+
+    #XXX: https://github.com/aws/aws-cdk/issues/2240
+    # To avoid to create extra Lambda Functions with names like LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a
+    # if log_retention=aws_logs.RetentionDays.THREE_DAYS is added to the constructor props
+    log_group = aws_logs.LogGroup(self, "TriggerTextractLogGroup",
+      log_group_name="/aws/lambda/TriggerTextExtractorFromImage",
+      retention=aws_logs.RetentionDays.THREE_DAYS)
+    log_group.grant_write(trigger_textract_lambda_fn)
 
