@@ -1,5 +1,9 @@
 aws-cdk.core==1.19.0
 aws-cdk.aws-ec2==1.19.0
+aws-cdk.aws-apigateway==1.19.0
+aws-cdk.aws-iam==1.19.0
+aws-cdk.aws-lambda==1.19.0
+aws-cdk.aws-s3==1.19.0
 
 # pip install elasticsearch
 elasticsearch==7.0.5
