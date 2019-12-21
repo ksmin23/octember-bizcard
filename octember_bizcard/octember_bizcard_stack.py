@@ -18,6 +18,8 @@ from aws_cdk.aws_lambda_event_sources import (
   KinesisEventSource
 )
 
+S3_BUCKET_LAMBDA_LAYER_LIB = os.getenv('S3_BUCKET_LAMBDA_LAYER_LIB', 'octember-resources')
+
 class OctemberBizcardStack(core.Stack):
 
   def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
@@ -430,4 +432,44 @@ class OctemberBizcardStack(core.Stack):
       }
     )
     core.Tag.add(es_cfn_domain, 'Name', 'octember-bizcard-es')
+
+    #XXX: https://github.com/aws/aws-cdk/issues/1342
+    s3_lib_bucket = s3.Bucket.from_bucket_name(self, id, S3_BUCKET_LAMBDA_LAYER_LIB)
+    es_lib_layer = _lambda.LayerVersion(self, "ESLib",
+      layer_version_name="es-lib",
+      compatible_runtimes=[_lambda.Runtime.PYTHON_3_7],
+      code=_lambda.Code.from_bucket(s3_lib_bucket, "var/octember-es-lib.zip")
+    )
+
+    redis_lib_layer = _lambda.LayerVersion(self, "RedisLib",
+      layer_version_name="redis-lib",
+      compatible_runtimes=[_lambda.Runtime.PYTHON_3_7],
+      code=_lambda.Code.from_bucket(s3_lib_bucket, "var/octember-redis-lib.zip")
+    )
+
+    #XXX: Deploy lambda in VPC - https://github.com/aws/aws-cdk/issues/1342
+    upsert_to_es_lambda_fn = _lambda.Function(self, "UpsertBizcardToES",
+      runtime=_lambda.Runtime.PYTHON_3_7,
+      function_name="UpsertBizcardToElasticSearch",
+      handler="upsert_bizcard_to_es.lambda_handler",
+      description="Upsert bizcard text into elasticsearch",
+      code=_lambda.Code.asset("./src/main/python/UpsertBizcardToES"),
+      environment={
+        'ES_HOST': es_cfn_domain.attr_domain_endpoint,
+        'ES_INDEX': 'octember_bizcard',
+        'ES_TYPE': 'bizcard'
+      },
+      timeout=core.Duration.minutes(5),
+      layers=[es_lib_layer],
+      security_groups=[sg_use_bizcard_es],
+      vpc=vpc
+    )
+
+    text_kinesis_event_source = KinesisEventSource(text_kinesis_stream, batch_size=99, starting_position=_lambda.StartingPosition.LATEST)
+    upsert_to_es_lambda_fn.add_event_source(text_kinesis_event_source)
+
+    log_group = aws_logs.LogGroup(self, "UpsertBizcardToESLogGroup",
+      log_group_name="/aws/lambda/UpsertBizcardToElasticSearch",
+      retention=aws_logs.RetentionDays.THREE_DAYS)
+    log_group.grant_write(upsert_to_es_lambda_fn)
 
