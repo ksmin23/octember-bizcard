@@ -768,3 +768,43 @@ class OctemberBizcardStack(core.Stack):
 
     recomm_query_cache.add_depends_on(recomm_query_cache_subnet_group)
 
+    bizcard_recomm_lambda_fn = _lambda.Function(self, "BizcardRecommender",
+      runtime=_lambda.Runtime.PYTHON_3_7,
+      function_name="BizcardRecommender",
+      handler="neptune_recommend_bizcard.lambda_handler",
+      description="This service serves PYMK(People You May Know).",
+      code=_lambda.Code.asset("./src/main/python/RecommendBizcard"),
+      environment={
+        'REGION_NAME': kwargs['env'].region,
+        'NEPTUNE_ENDPOINT': bizcard_graph_db.attr_read_endpoint,
+        'NEPTUNE_PORT': bizcard_graph_db.attr_port,
+        'ELASTICACHE_HOST': recomm_query_cache.attr_redis_endpoint_address
+      },
+      timeout=core.Duration.minutes(1),
+      layers=[gremlinpython_lib_layer, redis_lib_layer],
+      security_groups=[sg_use_bizcard_graph_db, sg_use_bizcard_neptune_cache],
+      vpc=vpc
+    )
+
+    #XXX: create API Gateway + LambdaProxy
+    recomm_api = apigw.LambdaRestApi(self, "BizcardRecommendAPI",
+      handler=bizcard_recomm_lambda_fn,
+      proxy=False,
+      rest_api_name="BizcardRecommend",
+      description="This service serves PYMK(People You May Know).",
+      endpoint_types=[apigw.EndpointType.REGIONAL],
+      deploy=True,
+      deploy_options=apigw.StageOptions(stage_name="v1")
+    )
+
+    bizcard_recomm = recomm_api.root.add_resource('pymk')
+    bizcard_recomm.add_method("GET",
+      method_responses=[apigw.MethodResponse(status_code="200",
+          response_models={
+            'application/json': apigw.EmptyModel()
+          }
+        ),
+        apigw.MethodResponse(status_code="400"),
+        apigw.MethodResponse(status_code="500")
+      ]
+    )
