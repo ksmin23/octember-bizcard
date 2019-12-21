@@ -312,3 +312,55 @@ class OctemberBizcardStack(core.Stack):
       retention=aws_logs.RetentionDays.THREE_DAYS)
     log_group.grant_write(trigger_textract_lambda_fn)
 
+    text_kinesis_stream = kinesis.Stream(self, "BizcardTextData", stream_name="octember-bizcard-txt")
+
+    textract_lambda_fn = _lambda.Function(self, "GetTextFromImage",
+      runtime=_lambda.Runtime.PYTHON_3_7,
+      function_name="GetTextFromImage",
+      handler="get_text_from_s3_image.lambda_handler",
+      description="extract text from an image in S3",
+      code=_lambda.Code.asset("./src/main/python/GetTextFromS3Image"),
+      environment={
+        'REGION_NAME': kwargs['env'].region,
+        'DDB_TABLE_NAME': ddb_table.table_name,
+        'KINESIS_STREAM_NAME': text_kinesis_stream.stream_name
+      },
+      timeout=core.Duration.minutes(5)
+    )
+
+    textract_lambda_fn.add_to_role_policy(ddb_table_rw_policy_statement)
+    textract_lambda_fn.add_to_role_policy(aws_iam.PolicyStatement(
+      effect=aws_iam.Effect.ALLOW,
+      resources=[text_kinesis_stream.stream_arn],
+      actions=["kinesis:Get*",
+        "kinesis:List*",
+        "kinesis:Describe*",
+        "kinesis:PutRecord",
+        "kinesis:PutRecords"
+      ]
+    ))
+
+    textract_lambda_fn.add_to_role_policy(aws_iam.PolicyStatement(**{
+      "effect": aws_iam.Effect.ALLOW,
+      "resources": [s3_bucket.bucket_arn, "{}/*".format(s3_bucket.bucket_arn)],
+      "actions": ["s3:AbortMultipartUpload",
+        "s3:GetBucketLocation",
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:ListBucketMultipartUploads",
+        "s3:PutObject"]
+    }))
+
+    textract_lambda_fn.add_to_role_policy(aws_iam.PolicyStatement(
+      effect=aws_iam.Effect.ALLOW,
+      resources=["*"],
+      actions=["textract:*"]))
+
+    img_kinesis_event_source = KinesisEventSource(img_kinesis_stream, batch_size=100, starting_position=_lambda.StartingPosition.LATEST)
+    textract_lambda_fn.add_event_source(img_kinesis_event_source)
+
+    log_group = aws_logs.LogGroup(self, "GetTextFromImageLogGroup",
+      log_group_name="/aws/lambda/GetTextFromImage",
+      retention=aws_logs.RetentionDays.THREE_DAYS)
+    log_group.grant_write(textract_lambda_fn)
+
