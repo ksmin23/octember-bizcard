@@ -10,7 +10,8 @@ from aws_cdk import (
   aws_kinesis as kinesis,
   aws_dynamodb as dynamodb,
   aws_logs,
-  aws_elasticsearch
+  aws_elasticsearch,
+  aws_kinesisfirehose
 )
 
 from aws_cdk.aws_lambda_event_sources import (
@@ -472,4 +473,75 @@ class OctemberBizcardStack(core.Stack):
       log_group_name="/aws/lambda/UpsertBizcardToElasticSearch",
       retention=aws_logs.RetentionDays.THREE_DAYS)
     log_group.grant_write(upsert_to_es_lambda_fn)
+
+    firehose_role_policy_doc = aws_iam.PolicyDocument()
+    firehose_role_policy_doc.add_statements(aws_iam.PolicyStatement(**{
+      "effect": aws_iam.Effect.ALLOW,
+      "resources": [s3_bucket.bucket_arn, "{}/*".format(s3_bucket.bucket_arn)],
+      "actions": ["s3:AbortMultipartUpload",
+        "s3:GetBucketLocation",
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:ListBucketMultipartUploads",
+        "s3:PutObject"]
+    }))
+
+    firehose_role_policy_doc.add_statements(aws_iam.PolicyStatement(
+      effect=aws_iam.Effect.ALLOW,
+      resources=["*"],
+      actions=["glue:GetTable",
+        "glue:GetTableVersion",
+        "glue:GetTableVersions"]
+    ))
+
+    firehose_role_policy_doc.add_statements(aws_iam.PolicyStatement(
+      effect=aws_iam.Effect.ALLOW,
+      resources=[text_kinesis_stream.stream_arn],
+      actions=["kinesis:DescribeStream",
+        "kinesis:GetShardIterator",
+        "kinesis:GetRecords"]
+    ))
+
+    firehose_log_group_name = "/aws/kinesisfirehose/octember-bizcard-txt-to-s3"
+    firehose_role_policy_doc.add_statements(aws_iam.PolicyStatement(
+      effect=aws_iam.Effect.ALLOW,
+      #XXX: The ARN will be formatted as follows:
+      # arn:{partition}:{service}:{region}:{account}:{resource}{sep}}{resource-name}
+      resources=[self.format_arn(service="logs", resource="log-group",
+        resource_name="{}:log-stream:*".format(firehose_log_group_name), sep=":")],
+      actions=["logs:PutLogEvents"]
+    ))
+
+    firehose_role = aws_iam.Role(self, "FirehoseDeliveryRole",
+      role_name="FirehoseDeliveryRole",
+      assumed_by=aws_iam.ServicePrincipal("firehose.amazonaws.com"),
+      #XXX: use inline_policies to work around https://github.com/aws/aws-cdk/issues/5221
+      inline_policies={
+        "firehose_role_policy": firehose_role_policy_doc
+      }
+    )
+
+    bizcard_text_to_s3_delivery_stream = aws_kinesisfirehose.CfnDeliveryStream(self, "BizcardTextToS3",
+      delivery_stream_name="octember-bizcard-txt-to-s3",
+      delivery_stream_type="KinesisStreamAsSource",
+      kinesis_stream_source_configuration={
+        "kinesisStreamArn": text_kinesis_stream.stream_arn,
+        "roleArn": firehose_role.role_arn
+      },
+      extended_s3_destination_configuration={
+        "bucketArn": s3_bucket.bucket_arn,
+        "bufferingHints": {
+          "intervalInSeconds": 60,
+          "sizeInMBs": 1
+        },
+        "cloudWatchLoggingOptions": {
+          "enabled": True,
+          "logGroupName": firehose_log_group_name,
+          "logStreamName": "S3Delivery"
+        },
+        "compressionFormat": "GZIP",
+        "prefix": "bizcard-text/",
+        "roleArn": firehose_role.role_arn
+      }
+    )
 
