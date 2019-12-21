@@ -590,3 +590,48 @@ class OctemberBizcardStack(core.Stack):
     # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-elasticache-cache-cluster.html#cfn-elasticache-cachecluster-cachesubnetgroupname
     es_query_cache.add_depends_on(es_query_cache_subnet_group)
 
+    #XXX: add more than 2 security groups
+    # https://github.com/aws/aws-cdk/blob/ea10f0d141a48819ec0000cd7905feda993870a9/packages/%40aws-cdk/aws-lambda/lib/function.ts#L387
+    # https://github.com/aws/aws-cdk/issues/1555
+    # https://github.com/aws/aws-cdk/pull/5049
+    bizcard_search_lambda_fn = _lambda.Function(self, "BizcardSearchServer",
+      runtime=_lambda.Runtime.PYTHON_3_7,
+      function_name="BizcardSearchProxy",
+      handler="es_search_bizcard.lambda_handler",
+      description="Proxy server to search bizcard text",
+      code=_lambda.Code.asset("./src/main/python/SearchBizcard"),
+      environment={
+        'ES_HOST': es_cfn_domain.attr_domain_endpoint,
+        'ES_INDEX': 'octember_bizcard',
+        'ES_TYPE': 'bizcard',
+        'ELASTICACHE_HOST': es_query_cache.attr_redis_endpoint_address
+      },
+      timeout=core.Duration.minutes(1),
+      layers=[es_lib_layer, redis_lib_layer],
+      security_groups=[sg_use_bizcard_es, sg_use_bizcard_es_cache],
+      vpc=vpc
+    )
+
+    #XXX: create API Gateway + LambdaProxy
+    search_api = apigw.LambdaRestApi(self, "BizcardSearchAPI",
+      handler=bizcard_search_lambda_fn,
+      proxy=False,
+      rest_api_name="BizcardSearch",
+      description="This service serves searching bizcard text.",
+      endpoint_types=[apigw.EndpointType.REGIONAL],
+      deploy=True,
+      deploy_options=apigw.StageOptions(stage_name="v1")
+    )
+
+    bizcard_search = search_api.root.add_resource('search')
+    bizcard_search.add_method("GET",
+      method_responses=[apigw.MethodResponse(status_code="200",
+          response_models={
+            'application/json': apigw.EmptyModel()
+          }
+        ),
+        apigw.MethodResponse(status_code="400"),
+        apigw.MethodResponse(status_code="500")
+      ]
+    )
+
