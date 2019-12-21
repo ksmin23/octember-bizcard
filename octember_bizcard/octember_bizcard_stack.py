@@ -695,3 +695,34 @@ class OctemberBizcardStack(core.Stack):
     bizcard_graph_db_replica_instance.add_depends_on(bizcard_graph_db)
     bizcard_graph_db_replica_instance.add_depends_on(bizcard_graph_db_instance)
 
+    gremlinpython_lib_layer = _lambda.LayerVersion(self, "GremlinPythonLib",
+      layer_version_name="gremlinpython-lib",
+      compatible_runtimes=[_lambda.Runtime.PYTHON_3_7],
+      code=_lambda.Code.from_bucket(s3_lib_bucket, "var/octember-gremlinpython-lib.zip")
+    )
+
+    #XXX: https://github.com/aws/aws-cdk/issues/1342
+    upsert_to_neptune_lambda_fn = _lambda.Function(self, "UpsertBizcardToGraphDB",
+      runtime=_lambda.Runtime.PYTHON_3_7,
+      function_name="UpsertBizcardToNeptune",
+      handler="upsert_bizcard_to_graph_db.lambda_handler",
+      description="Upsert bizcard into neptune",
+      code=_lambda.Code.asset("./src/main/python/UpsertBizcardToGraphDB"),
+      environment={
+        'REGION_NAME': kwargs['env'].region,
+        'NEPTUNE_ENDPOINT': bizcard_graph_db.attr_endpoint,
+        'NEPTUNE_PORT': bizcard_graph_db.attr_port
+      },
+      timeout=core.Duration.minutes(5),
+      layers=[gremlinpython_lib_layer],
+      security_groups=[sg_use_bizcard_graph_db],
+      vpc=vpc
+    )
+
+    upsert_to_neptune_lambda_fn.add_event_source(text_kinesis_event_source)
+
+    log_group = aws_logs.LogGroup(self, "UpsertBizcardToGraphDBLogGroup",
+      log_group_name="/aws/lambda/UpsertBizcardToNeptune",
+      retention=aws_logs.RetentionDays.THREE_DAYS)
+    log_group.grant_write(upsert_to_neptune_lambda_fn)
+
