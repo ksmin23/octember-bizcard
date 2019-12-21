@@ -9,7 +9,8 @@ from aws_cdk import (
   aws_lambda as _lambda,
   aws_kinesis as kinesis,
   aws_dynamodb as dynamodb,
-  aws_logs
+  aws_logs,
+  aws_elasticsearch
 )
 
 from aws_cdk.aws_lambda_event_sources import (
@@ -363,4 +364,70 @@ class OctemberBizcardStack(core.Stack):
       log_group_name="/aws/lambda/GetTextFromImage",
       retention=aws_logs.RetentionDays.THREE_DAYS)
     log_group.grant_write(textract_lambda_fn)
+
+    sg_use_bizcard_es = aws_ec2.SecurityGroup(self, "BizcardSearchClientSG",
+      vpc=vpc,
+      allow_all_outbound=True,
+      description='security group for octember bizcard elasticsearch client',
+      security_group_name='use-octember-bizcard-es'
+    )
+    core.Tag.add(sg_use_bizcard_es, 'Name', 'use-octember-bizcard-es')
+
+    sg_bizcard_es = aws_ec2.SecurityGroup(self, "BizcardSearchSG",
+      vpc=vpc,
+      allow_all_outbound=True,
+      description='security group for octember bizcard elasticsearch',
+      security_group_name='octember-bizcard-es'
+    )
+    core.Tag.add(sg_bizcard_es, 'Name', 'octember-bizcard-es')
+
+    sg_bizcard_es.add_ingress_rule(peer=sg_bizcard_es, connection=aws_ec2.Port.all_tcp(), description='octember-bizcard-es')
+    sg_bizcard_es.add_ingress_rule(peer=sg_use_bizcard_es, connection=aws_ec2.Port.all_tcp(), description='use-octember-bizcard-es')
+
+    #XXX: aws cdk elastsearch example - https://github.com/aws/aws-cdk/issues/2873
+    es_cfn_domain = aws_elasticsearch.CfnDomain(self, 'BizcardSearch',
+      elasticsearch_cluster_config={
+        "dedicatedMasterCount": 3,
+        "dedicatedMasterEnabled": True,
+        "dedicatedMasterType": "t2.medium.elasticsearch",
+        "instanceCount": 2,
+        "instanceType": "t2.medium.elasticsearch",
+        "zoneAwarenessEnabled": True
+      },
+      ebs_options={
+        "ebsEnabled": True,
+        "volumeSize": 10,
+        "volumeType": "gp2"
+      },
+      domain_name="octember-bizcard",
+      elasticsearch_version="7.1",
+      encryption_at_rest_options={
+        "enabled": False
+      },
+      access_policies={
+        "Version": "2012-10-17",
+        "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "es:Describe*",
+              "es:List*",
+              "es:Get*",
+              "es:ESHttp*"
+            ],
+            "Resource": self.format_arn(service="es", resource="domain", resource_name="octember-bizcard/*")
+          }
+        ]
+      },
+      snapshot_options={
+        "automatedSnapshotStartHour": 17
+      },
+      vpc_options={
+        "securityGroupIds": [sg_bizcard_es.security_group_id],
+        "subnetIds": vpc.select_subnets(subnet_type=aws_ec2.SubnetType.PRIVATE).subnet_ids
+      }
+    )
+    core.Tag.add(es_cfn_domain, 'Name', 'octember-bizcard-es')
 
