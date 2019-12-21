@@ -11,7 +11,8 @@ from aws_cdk import (
   aws_dynamodb as dynamodb,
   aws_logs,
   aws_elasticsearch,
-  aws_kinesisfirehose
+  aws_kinesisfirehose,
+  aws_elasticache
 )
 
 from aws_cdk.aws_lambda_event_sources import (
@@ -544,4 +545,48 @@ class OctemberBizcardStack(core.Stack):
         "roleArn": firehose_role.role_arn
       }
     )
+
+    sg_use_bizcard_es_cache = aws_ec2.SecurityGroup(self, "BizcardSearchCacheClientSG",
+      vpc=vpc,
+      allow_all_outbound=True,
+      description='security group for octember bizcard search query cache client',
+      security_group_name='use-octember-bizcard-es-cache'
+    )
+    core.Tag.add(sg_use_bizcard_es_cache, 'Name', 'use-octember-bizcard-es-cache')
+
+    sg_bizcard_es_cache = aws_ec2.SecurityGroup(self, "BizcardSearchCacheSG",
+      vpc=vpc,
+      allow_all_outbound=True,
+      description='security group for octember bizcard search query cache',
+      security_group_name='octember-bizcard-es-cache'
+    )
+    core.Tag.add(sg_bizcard_es_cache, 'Name', 'octember-bizcard-es-cache')
+
+    sg_bizcard_es_cache.add_ingress_rule(peer=sg_use_bizcard_es_cache, connection=aws_ec2.Port.tcp(6379), description='use-octember-bizcard-es-cache')
+
+    es_query_cache_subnet_group = aws_elasticache.CfnSubnetGroup(self, "QueryCacheSubnetGroup",
+      description="subnet group for octember-bizcard-es-cache",
+      subnet_ids=vpc.select_subnets(subnet_type=aws_ec2.SubnetType.PRIVATE).subnet_ids,
+      cache_subnet_group_name='octember-bizcard-es-cache'
+    )
+
+    es_query_cache = aws_elasticache.CfnCacheCluster(self, "BizcardSearchQueryCache",
+      cache_node_type="cache.t3.small",
+      num_cache_nodes=1,
+      engine="redis",
+      engine_version="5.0.5",
+      auto_minor_version_upgrade=False,
+      cluster_name="octember-bizcard-es-cache",
+      snapshot_retention_limit=3,
+      snapshot_window="17:00-19:00",
+      preferred_maintenance_window="mon:19:00-mon:20:30",
+      #XXX: Do not use referece for "cache_subnet_group_name" - https://github.com/aws/aws-cdk/issues/3098
+      #cache_subnet_group_name=es_query_cache_subnet_group.cache_subnet_group_name, # Redis cluster goes to wrong VPC
+      cache_subnet_group_name='octember-bizcard-es-cache',
+      vpc_security_group_ids=[sg_bizcard_es_cache.security_group_id]
+    )
+
+    #XXX: If you're going to launch your cluster in an Amazon VPC, you need to create a subnet group before you start creating a cluster.
+    # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-elasticache-cache-cluster.html#cfn-elasticache-cachecluster-cachesubnetgroupname
+    es_query_cache.add_depends_on(es_query_cache_subnet_group)
 
