@@ -726,3 +726,45 @@ class OctemberBizcardStack(core.Stack):
       retention=aws_logs.RetentionDays.THREE_DAYS)
     log_group.grant_write(upsert_to_neptune_lambda_fn)
 
+    sg_use_bizcard_neptune_cache = aws_ec2.SecurityGroup(self, "BizcardNeptuneCacheClientSG",
+      vpc=vpc,
+      allow_all_outbound=True,
+      description='security group for octember bizcard recommendation query cache client',
+      security_group_name='use-octember-bizcard-neptune-cache'
+    )
+    core.Tag.add(sg_use_bizcard_neptune_cache, 'Name', 'use-octember-bizcard-es-cache')
+
+    sg_bizcard_neptune_cache = aws_ec2.SecurityGroup(self, "BizcardNeptuneCacheSG",
+      vpc=vpc,
+      allow_all_outbound=True,
+      description='security group for octember bizcard recommendation query cache',
+      security_group_name='octember-bizcard-neptune-cache'
+    )
+    core.Tag.add(sg_bizcard_neptune_cache, 'Name', 'octember-bizcard-neptune-cache')
+
+    sg_bizcard_neptune_cache.add_ingress_rule(peer=sg_use_bizcard_neptune_cache, connection=aws_ec2.Port.tcp(6379), description='use-octember-bizcard-neptune-cache')
+
+    recomm_query_cache_subnet_group = aws_elasticache.CfnSubnetGroup(self, "RecommQueryCacheSubnetGroup",
+      description="subnet group for octember-bizcard-neptune-cache",
+      subnet_ids=vpc.select_subnets(subnet_type=aws_ec2.SubnetType.PRIVATE).subnet_ids,
+      cache_subnet_group_name='octember-bizcard-neptune-cache'
+    )
+
+    recomm_query_cache = aws_elasticache.CfnCacheCluster(self, "BizcardRecommQueryCache",
+      cache_node_type="cache.t3.small",
+      num_cache_nodes=1,
+      engine="redis",
+      engine_version="5.0.5",
+      auto_minor_version_upgrade=False,
+      cluster_name="octember-bizcard-neptune-cache",
+      snapshot_retention_limit=3,
+      snapshot_window="17:00-19:00",
+      preferred_maintenance_window="mon:19:00-mon:20:30",
+      #XXX: Do not use referece for "cache_subnet_group_name" - https://github.com/aws/aws-cdk/issues/3098
+      #cache_subnet_group_name=recomm_query_cache_subnet_group.cache_subnet_group_name, # Redis cluster goes to wrong VPC
+      cache_subnet_group_name='octember-bizcard-neptune-cache',
+      vpc_security_group_ids=[sg_bizcard_neptune_cache.security_group_id]
+    )
+
+    recomm_query_cache.add_depends_on(recomm_query_cache_subnet_group)
+
