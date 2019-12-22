@@ -336,7 +336,51 @@
 | knows | {"weight": 1.0} | |
 
 
-### How To Build
+### How To Build & Deploy
+#### (1) aws cdk를 사용하는 방법
+##### Prerequisites
+1. [Getting Started With the AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html)를 참고해서 cdk를 설치하고,
+cdk를 실행할 때 사용할 IAM User를 생성한 후, `~/.aws/config`에 등록함
+예를 들어서, cdk_user라는 IAM User를 생성 한 후, 아래와 같이 `~/.aws/config`에 추가로 등록함
+
+    ```shell script
+    $ cat ~/.aws/config
+    [profile cdk_user]
+    aws_access_key_id=AKIAI44QH8DHBEXAMPLE
+    aws_secret_access_key=je7MtGbClwBF/2Zp9Utk/h3yCo8nvbEXAMPLEKEY
+    region=us-east-1
+    ```
+
+2. Lambda Layer에 등록할 Python 패키지를 생성해서 s3 bucket에 저장함
+에를 들어, elasticsearch, gremlinpython, redis 패키지를
+Lambda Layer에 등록 할 수 있도록 octember-resources라는 이름의 s3 bucket을 생성 후, 아래와 같이 저장함
+
+    ```shell script
+    $ aws s3 ls s3://octember-resources/var/
+    2019-10-25 08:38:50          0
+    2019-10-25 08:40:28    1294387 octember-es-lib.zip
+    2019-10-29 08:35:28    1311836 octember-gremlinpython-lib.zip
+    2019-10-30 07:41:07     141534 octember-redis-lib.zip
+    ```
+
+3. 소스 코드를 git에서 다운로드 받은 후, `S3_BUCKET_LAMBDA_LAYER_LIB` 라는 환경 변수에 lambda layer에 등록할 패키지가 저장된 s3 bucket 이름을
+설정 한 후, ￿￿￿`cdk deploy￿` 명령어를 이용해서 배포함
+
+    ```shell script
+    $ git clone https://github.com/ksmin23/octember-bizcard.git
+    $ cd octember-bizcard
+    $ python3 -m venv .env
+    $ source .env/bin/activate
+    (.env) $ pip install -r requirements.txt
+    (.env) $ S3_BUCKET_LAMBDA_LAYER_LIB=octember-resources cdk --profile cdk_user deploy
+    ```
+
+4. 배포한 애플리케이션을 삭제하려면, `cdk destroy` 명령어를 아래와 같이 싱행
+    ```shell script
+    (.env) $ cdk --profile cdk_user destroy
+    ```
+
+#### (2) aws cdk를 사용하는 방법
 ##### Image upload
 1. s3 bucket을 생성함; 예를 들어서 **us-east-1** 리전에 **octember-use1** 라는 이름의 bucket을 생성함
 2. 생성된 s3 bucket 안에 **bizcard-raw-img**, **bizcard-by-user** 디렉터리를 생성함
