@@ -341,7 +341,7 @@
 ##### Prerequisites
 1. [Getting Started With the AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html)를 참고해서 cdk를 설치하고,
 cdk를 실행할 때 사용할 IAM User를 생성한 후, `~/.aws/config`에 등록함
-예를 들어서, cdk_user라는 IAM User를 생성 한 후, 아래와 같이 `~/.aws/config`에 추가로 등록함
+를 들어서, cdk_user라는 IAM User를 생성 한 후, 아래와 같이 `~/.aws/config`에 추가로 등록함
 
     ```shell script
     $ cat ~/.aws/config
@@ -364,7 +364,7 @@ Lambda Layer에 등록 할 수 있도록 octember-resources라는 이름의 s3 b
     ```
 
 3. 소스 코드를 git에서 다운로드 받은 후, `S3_BUCKET_LAMBDA_LAYER_LIB` 라는 환경 변수에 lambda layer에 등록할 패키지가 저장된 s3 bucket 이름을
-설정 한 후, ￿￿￿`cdk deploy￿` 명령어를 이용해서 배포함
+설정 한 후, `cdk deploy￿` 명령어를 이용해서 배포함
 
     ```shell script
     $ git clone https://github.com/ksmin23/octember-bizcard.git
