@@ -21,3 +21,6 @@ aenum==2.2.2
 gremlinpython==3.4.4
 isodate==0.6.0
 tornado==4.5.3
+
+# pip install redis
+redis==3.3.11
