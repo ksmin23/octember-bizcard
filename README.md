@@ -364,7 +364,7 @@ Lambda Layer에 등록 할 수 있도록 octember-resources라는 이름의 s3 b
     ```
 
 3. 소스 코드를 git에서 다운로드 받은 후, `S3_BUCKET_LAMBDA_LAYER_LIB` 라는 환경 변수에 lambda layer에 등록할 패키지가 저장된 s3 bucket 이름을
-설정 한 후, `cdk_user deploy` 명령어를 이용해서 배포함
+설정 한 후, `cdk deploy` 명령어를 이용해서 배포함
 
     ```shell script
     $ git clone https://github.com/ksmin23/octember-bizcard.git
