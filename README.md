@@ -499,6 +499,7 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
 
 ##### Neptune
 - [Neptune 시작하기](https://docs.aws.amazon.com/ko_kr/neptune/latest/userguide/get-started.html)
+- [Using the Neptune Workbench with Jupyter Notebooks](https://docs.aws.amazon.com/neptune/latest/userguide/notebooks.html)
 - [Let Me Graph That For You – Part 1 – Air Routes](https://aws.amazon.com/ko/blogs/database/let-me-graph-that-for-you-part-1-air-routes/)
 - [aws-samples/amazon-neptune-samples](https://github.com/aws-samples/amazon-neptune-samples)
 - [Apache TinkerPop<sup>TM</sup>](http://tinkerpop.apache.org/)
