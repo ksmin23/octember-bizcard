@@ -30,7 +30,7 @@
     | bucket | s3 bucket 이름 | Yes | String |
     | object | s3 object 이름 | Yes | String |
 
-  - ex)
+  - ex) octember-use1 라는 s3 bucket의 bizcard-raw-img 디렉터리 아래에 bar_s20191101_125236.jpg 파일을 업로하는 예제
     ```
     curl -X PUT "https://t2e7cpvqvu.execute-api.us-east-1.amazonaws.com/v1/octember-use1/bizcard-raw-img%2Fbar_s20191101_125236.jpg" \
          --data @bar_s20191101_125236.jpg
@@ -596,65 +596,17 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
   4. 전송할 이미지 파일이 추가한 후, Send 버튼을 눌러서 PUT 메소드를 실행함<br/>
   ![octember-bizcard-img-uploader-02](resources/octember-bizcard-img-uploader-04.png)
 
-- **demo용 클라이언트를 사용하는 방법**
-
-  1. 업로드한 명함 이미지를 저장할 s3 bucket의 CORS 설정을 아래 처럼 변경함.
-        ```
-        <?xml version="1.0" encoding="UTF-8"?>
-        <CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-        <CORSRule>
-            <AllowedOrigin>*</AllowedOrigin>
-            <AllowedMethod>GET</AllowedMethod>
-            <MaxAgeSeconds>3000</MaxAgeSeconds>
-            <AllowedHeader>Authorization</AllowedHeader>
-        </CORSRule>
-        <CORSRule>
-            <AllowedOrigin>*</AllowedOrigin>
-            <AllowedMethod>POST</AllowedMethod>
-            <MaxAgeSeconds>3000</MaxAgeSeconds>
-            <AllowedHeader>Authorization</AllowedHeader>
-        </CORSRule>
-        </CORSConfiguration>
-        ```
-        - ex)
-           ![octember-s3_bucket_cors_configuration](resources/octember-s3_bucket_cors_configuration.png)
-  2. https://github.com/ksmin23/s3-direct-uploader-demo 를 로컬 PC에 git clone 한 후, app.js 파일에서 `TODO:` 주석 처리된 부분을
-     알맞게 수정함.
-        ```
-        var uploader = new qq.s3.FineUploader({
-            ...
-            request: {
-              //TODO: S3 Bucket URL
-              endpoint: ...,
-              //TODO: IAM User AccessKey
-              accessKey: ...
-            },
-            objectProperties: {
-              //TODO: AWS Region name
-              region: ...
-              key(fileId) {
-                //TODO: S3 Bucket Prefix
-                var prefixPath = ...
-              }
-            },
-            signature: {
-              ...
-              //TODO: AWS API Gateway Lambda Authorizers URL
-              endpoint: ...
-            },
-            ...
-        }
-        ```
-  3. 수정한 이후, index.html 파일을 browser로 열어서 사용함
-
 ##### Demo Scenario
 
-1. Octember<sup>TM</sup> 사용자별로 자신의 명함 이미지를 하나씩 등록함;
-예를 들어 resources/samples 디렉터리에서 edy_a0653895773.jpg, poby_a5411145874.jpg, pororo_a2553858703.jpg 명함 이미지를 등록함
-2. Octember<sup>TM</sup> 사용자별로 각자 가지고 있는 명함 이미지를 등록함;
+1. Octember<sup>TM</sup> 사용자별로 자신의 명함 이미지를 하나씩 등록함;<br/>
+예를 들어 resources/samples 디렉터리에서 edy_a0653895773.jpg, poby_a5411145874.jpg, pororo_a2553858703.jpg 명함 이미지를 등록함<br/>
+**반드시 edy_a0653895773.jpg, poby_a5411145874.jpg, pororo_a2553858703.jpg 명항 이미지를 가장 먼저 등록해야 함**<br/>
+2. Octember<sup>TM</sup> 사용자별로 각자 가지고 있는 명함 이미지를 등록함;<br/>
 예를 들어 Octember<sup>TM</sup> 사용자 Edy Kim의 명함 이미지 edy_cr8677419714.jpg, edy_ha3800766762.jpg, edy_pb5411145874.jpg 을 등록한 후,
 나머지 사용자들(Poby Kim, Pororo Kim)의 명함 이미지도 등록함
 3. resources/samples 디렉터리 안에 있는 모든 명함을 등록하면, 아래와 같은 인맥 관계가 생성됨
 ![demo-octember-bizcard-network.png](resources/demo-octember-bizcard-network.png)
 3. 등록된 명함을 찾기 위해서 사용자 이름이나 직장명, 직무(Job title) 등으로 검색해서 결과를 확인함
+![demo-octember-bizcard-search.png](resources/demo-octember-bizcard-search.png)
 4. 인맥 추천 api를 이용해서 Octember<sup>TM</sup> 회원에게 추천할 만한 사람을 찾아봄
+![demo-octember-bizcard-pymk.png](resources/demo-octember-bizcard-pymk.png)
