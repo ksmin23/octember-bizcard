@@ -601,6 +601,7 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
 1. Octember<sup>TM</sup> 사용자별로 자신의 명함 이미지를 하나씩 등록함;<br/>
 예를 들어 resources/samples 디렉터리에서 edy_a0653895773.jpg, poby_a5411145874.jpg, pororo_a2553858703.jpg 명함 이미지를 등록함<br/>
 **반드시 edy_a0653895773.jpg, poby_a5411145874.jpg, pororo_a2553858703.jpg 명항 이미지를 가장 먼저 등록해야 함**<br/>
+![octember-bizcard-sample.png](resources/octember-bizcard-sample.png)
 2. Octember<sup>TM</sup> 사용자별로 각자 가지고 있는 명함 이미지를 등록함;<br/>
 예를 들어 Octember<sup>TM</sup> 사용자 Edy Kim의 명함 이미지 edy_cr8677419714.jpg, edy_ha3800766762.jpg, edy_pb5411145874.jpg 을 등록한 후,
 나머지 사용자들(Poby Kim, Pororo Kim)의 명함 이미지도 등록함
