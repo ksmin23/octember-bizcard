@@ -12,6 +12,7 @@ aws-cdk.aws-elasticsearch==1.51.0
 aws-cdk.aws-kinesisfirehose==1.51.0
 aws-cdk.aws-elasticache==1.51.0
 aws-cdk.aws-neptune==1.51.0
+aws-cdk.aws-sagemaker==1.51.0
 
 # pip install elasticsearch
 elasticsearch==7.0.5

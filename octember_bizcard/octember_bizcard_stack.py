@@ -16,7 +16,8 @@ from aws_cdk import (
   aws_elasticsearch,
   aws_kinesisfirehose,
   aws_elasticache,
-  aws_neptune
+  aws_neptune,
+  aws_sagemaker
 )
 
 from aws_cdk.aws_lambda_event_sources import (
@@ -62,7 +63,7 @@ class OctemberBizcardStack(core.Stack):
     )
 
     s3_bucket = s3.Bucket(self, "s3bucket",
-      bucket_name="octember-bizcard-{region}-{account}".format(region=kwargs['env'].region, account=kwargs['env'].account))
+      bucket_name="octember-bizcard-{region}-{account}".format(region=core.Aws.REGION, account=core.Aws.ACCOUNT_ID))
 
     api = apigw.RestApi(self, "BizcardImageUploader",
       rest_api_name="BizcardImageUploader",
@@ -262,7 +263,7 @@ class OctemberBizcardStack(core.Stack):
       description="Trigger to extract text from an image in S3",
       code=_lambda.Code.asset("./src/main/python/TriggerTextExtractFromS3Image"),
       environment={
-        'REGION_NAME': kwargs['env'].region,
+        'REGION_NAME': core.Aws.REGION,
         'DDB_TABLE_NAME': ddb_table.table_name,
         'KINESIS_STREAM_NAME': img_kinesis_stream.stream_name
       },
@@ -330,7 +331,7 @@ class OctemberBizcardStack(core.Stack):
       description="extract text from an image in S3",
       code=_lambda.Code.asset("./src/main/python/GetTextFromS3Image"),
       environment={
-        'REGION_NAME': kwargs['env'].region,
+        'REGION_NAME': core.Aws.REGION,
         'DDB_TABLE_NAME': ddb_table.table_name,
         'KINESIS_STREAM_NAME': text_kinesis_stream.stream_name
       },
@@ -729,7 +730,7 @@ class OctemberBizcardStack(core.Stack):
       description="Upsert bizcard into neptune",
       code=_lambda.Code.asset("./src/main/python/UpsertBizcardToGraphDB"),
       environment={
-        'REGION_NAME': kwargs['env'].region,
+        'REGION_NAME': core.Aws.REGION,
         'NEPTUNE_ENDPOINT': bizcard_graph_db.attr_endpoint,
         'NEPTUNE_PORT': bizcard_graph_db.attr_port
       },
@@ -795,7 +796,7 @@ class OctemberBizcardStack(core.Stack):
       description="This service serves PYMK(People You May Know).",
       code=_lambda.Code.asset("./src/main/python/RecommendBizcard"),
       environment={
-        'REGION_NAME': kwargs['env'].region,
+        'REGION_NAME': core.Aws.REGION,
         'NEPTUNE_ENDPOINT': bizcard_graph_db.attr_read_endpoint,
         'NEPTUNE_PORT': bizcard_graph_db.attr_port,
         'ELASTICACHE_HOST': recomm_query_cache.attr_redis_endpoint_address
@@ -827,4 +828,64 @@ class OctemberBizcardStack(core.Stack):
         apigw.MethodResponse(status_code="400"),
         apigw.MethodResponse(status_code="500")
       ]
+    )
+
+    sagemaker_notebook_role_policy_doc = aws_iam.PolicyDocument()
+    sagemaker_notebook_role_policy_doc.add_statements(aws_iam.PolicyStatement(**{
+      "effect": aws_iam.Effect.ALLOW,
+      "resources": ["arn:aws:s3:::aws-neptune-notebook",
+        "arn:aws:s3:::aws-neptune-notebook/*"],
+      "actions": ["s3:GetObject",
+        "s3:ListBucket"]
+    }))
+
+    sagemaker_notebook_role_policy_doc.add_statements(aws_iam.PolicyStatement(**{
+      "effect": aws_iam.Effect.ALLOW,
+      "resources": ["arn:aws:neptune-db:{region}:{account}:{cluster_id}/*".format(
+        region=core.Aws.REGION, account=core.Aws.ACCOUNT_ID, cluster_id=bizcard_graph_db.attr_cluster_resource_id)],
+      "actions": ["neptune-db:connect"]
+    }))
+
+    sagemaker_notebook_role = aws_iam.Role(self, 'SageMakerNotebookForNeptuneWorkbenchRole',
+      role_name='AWSNeptuneNotebookRole-OctemberBizcard',
+      assumed_by=aws_iam.ServicePrincipal('sagemaker.amazonaws.com'),
+      #XXX: use inline_policies to work around https://github.com/aws/aws-cdk/issues/5221
+      inline_policies={
+        'AWSNeptuneNotebook': sagemaker_notebook_role_policy_doc
+      }
+    )
+
+    neptune_wb_lifecycle_content = '''#!/bin/bash
+sudo -u ec2-user -i <<'EOF'
+echo "export GRAPH_NOTEBOOK_AUTH_MODE=DEFAULT" >> ~/.bashrc
+echo "export GRAPH_NOTEBOOK_HOST={NeptuneClusterEndpoint}" >> ~/.bashrc
+echo "export GRAPH_NOTEBOOK_PORT={NeptuneClusterPort}" >> ~/.bashrc
+echo "export NEPTUNE_LOAD_FROM_S3_ROLE_ARN=''" >> ~/.bashrc
+echo "export AWS_REGION={AWS_Region}" >> ~/.bashrc
+aws s3 cp s3://aws-neptune-notebook/graph_notebook.tar.gz /tmp/graph_notebook.tar.gz
+rm -rf /tmp/graph_notebook
+tar -zxvf /tmp/graph_notebook.tar.gz -C /tmp
+/tmp/graph_notebook/install.sh
+EOF
+'''.format(NeptuneClusterEndpoint=bizcard_graph_db.attr_endpoint,
+    NeptuneClusterPort=bizcard_graph_db.attr_port,
+    AWS_Region=core.Aws.REGION)
+
+    neptune_wb_lifecycle_config_prop = aws_sagemaker.CfnNotebookInstanceLifecycleConfig.NotebookInstanceLifecycleHookProperty(
+      content=core.Fn.base64(neptune_wb_lifecycle_content)
+    )
+
+    neptune_wb_lifecycle_config = aws_sagemaker.CfnNotebookInstanceLifecycleConfig(self, 'NpetuneWorkbenchLifeCycleConfig',
+      notebook_instance_lifecycle_config_name='AWSNeptuneWorkbenchOctemberBizcardLCConfig',
+      on_start=[neptune_wb_lifecycle_config_prop]
+    )
+
+    neptune_workbench = aws_sagemaker.CfnNotebookInstance(self, 'NeptuneWorkbench',
+      instance_type='ml.t2.medium',
+      role_arn=sagemaker_notebook_role.role_arn,
+      lifecycle_config_name=neptune_wb_lifecycle_config.notebook_instance_lifecycle_config_name,
+      notebook_instance_name='OctemberBizcard-NeptuneWorkbench',
+      root_access='Disabled',
+      security_group_ids=[sg_use_bizcard_graph_db.security_group_name],
+      subnet_id=bizcard_graph_db_subnet_group.subnet_ids[0]
     )
