@@ -2,7 +2,15 @@
 
 - OCR(Optical Character Reconition) 기술을 활용한 명함 관리 및 Graph database(Neptune)을 이용한 인맥 추천 서비스
 
-### Architecture
+## Table of Contents
+[Architecture](#architecture)
+[RESTful API Specification](#restful-api-spec)
+[Lambda Functions Overview](#lambda-fn-overview)
+[How To Build & Deploy](#how-to-deploy)
+[References & Tips](#references-tips)
+[Demo](#demo)
+
+###<a name="architecture"></a>Architecture
 ![octember-architecture](octember-arch.png)
 
 ##### Key AWS Services
@@ -17,7 +25,7 @@
 - Textract
 - S3
 
-### RESTful API Specification
+###<a name="restful-api-spec"></a>RESTful API Specification
 ##### Image upload
 - Request
   - PUT
@@ -204,7 +212,7 @@
     ]
     ```
 
-### Lambda Functions Overview
+###<a name="lambda-fn-overview"></a>Lambda Functions Overview
 
 | Name | Description | Event Source | IAM Role | VPC | Etc |
 |:----:|-------------|--------------|------|-----|-----|
@@ -335,7 +343,7 @@
 | knows | {"weight": 1.0} | |
 
 
-### How To Build & Deploy
+###<a name="how-to-deploy"></a>How To Build & Deploy
 #### (1) aws cdk를 사용하는 방법
 ##### Prerequisites
 1. [Getting Started With the AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html)를 참고해서 cdk를 설치하고,
@@ -372,12 +380,12 @@ Lambda Layer에 등록 할 수 있도록 octember-resources라는 이름의 s3 b
     $ python3 -m venv .env
     $ source .env/bin/activate
     (.env) $ pip install -r requirements.txt
-    (.env) $ S3_BUCKET_LAMBDA_LAYER_LIB=octember-resources cdk --profile cdk_user deploy
+    (.env) $ S3_BUCKET_LAMBDA_LAYER_LIB=octember-resources cdk --profile=cdk_user deploy
     ```
 
 4. 배포한 애플리케이션을 삭제하려면, `cdk destroy` 명령어를 아래와 같이 실행
     ```shell script
-    (.env) $ cdk --profile cdk_user destroy
+    (.env) $ cdk --profile=cdk_user destroy
     ```
 
 #### (2) aws 웹 console을 사용하는 방법
@@ -454,7 +462,7 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
     ```
 7. 인맥 추천 서버를 만들기 위해서 [API Gateway + Lambda](#api-gateway--lambda)를 참고해서 api gateway와 **RecommendBizcard** 라는 lambda function을 동합한 RESTful API를 생성함
 
-### References & Tips
+###<a name="references-tips"></a>References & Tips
 
 ##### Lambda
 
@@ -526,7 +534,7 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
   > Note: Amazon Kinesis Data Firehose currently doesn't support VPC domains.</strike>
 - [Amazon Kinesis Data Firehose adds support for streaming data delivery to an Amazon Elasticsearch Service domain in an Amazon Virtual Private Cloud (VPC) (2020-04-24)](https://aws.amazon.com/about-aws/whats-new/2020/04/amazon-kinesis-data-firehose-adds-support-for-streaming-data-delivery-to-amazon-elasticsearch-service-in-amazon-vpc/)
 
-### Demo
+###<a name="demo"></a>Demo
 ##### 명함 이미지를 등록하는 방법
 - **사전 준비 작업**
   1. 다음과 같은 IAM Policy를 갖는 IAM User를 생성함.<br>
@@ -608,7 +616,7 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
 나머지 사용자들(Poby Kim, Pororo Kim)의 명함 이미지도 등록함
 3. resources/samples 디렉터리 안에 있는 모든 명함을 등록하면, 아래와 같은 인맥 관계가 생성됨
 ![demo-octember-bizcard-network.png](resources/demo-octember-bizcard-network.png)
-3. 등록된 명함을 찾기 위해서 사용자 이름이나 직장명, 직무(Job title) 등으로 검색해서 결과를 확인함
+4. 등록된 명함을 찾기 위해서 사용자 이름이나 직장명, 직무(Job title) 등으로 검색해서 결과를 확인함
 ![demo-octember-bizcard-search.png](resources/demo-octember-bizcard-search.png)
-4. 인맥 추천 api를 이용해서 Octember<sup>TM</sup> 회원에게 추천할 만한 사람을 찾아봄
+5. 인맥 추천 api를 이용해서 Octember<sup>TM</sup> 회원에게 추천할 만한 사람을 찾아봄
 ![demo-octember-bizcard-pymk.png](resources/demo-octember-bizcard-pymk.png)
