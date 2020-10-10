@@ -3,14 +3,14 @@
 - OCR(Optical Character Reconition) 기술을 활용한 명함 관리 및 Graph database(Neptune)을 이용한 인맥 추천 서비스
 
 ## Table of Contents
-[Architecture](#architecture)
-[RESTful API Specification](#restful-api-spec)
-[Lambda Functions Overview](#lambda-fn-overview)
-[How To Build & Deploy](#how-to-deploy)
-[References & Tips](#references-tips)
-[Demo](#demo)
+* [Architecture](#architecture)
+* [RESTful API Specification](#restful-api-spec)
+* [Lambda Functions Overview](#lambda-fn-overview)
+* [How To Build & Deploy](#how-to-deploy)
+* [References & Tips](#references-tips)
+* [Demo](#demo)
 
-###<a name="architecture"></a>Architecture
+### <a name="architecture"></a>Architecture
 ![octember-architecture](octember-arch.png)
 
 ##### Key AWS Services
@@ -25,7 +25,7 @@
 - Textract
 - S3
 
-###<a name="restful-api-spec"></a>RESTful API Specification
+### <a name="restful-api-spec"></a>RESTful API Specification
 ##### Image upload
 - Request
   - PUT
@@ -212,7 +212,7 @@
     ]
     ```
 
-###<a name="lambda-fn-overview"></a>Lambda Functions Overview
+### <a name="lambda-fn-overview"></a>Lambda Functions Overview
 
 | Name | Description | Event Source | IAM Role | VPC | Etc |
 |:----:|-------------|--------------|------|-----|-----|
@@ -343,7 +343,7 @@
 | knows | {"weight": 1.0} | |
 
 
-###<a name="how-to-deploy"></a>How To Build & Deploy
+### <a name="how-to-deploy"></a>How To Build & Deploy
 #### (1) aws cdk를 사용하는 방법
 ##### Prerequisites
 1. [Getting Started With the AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html)를 참고해서 cdk를 설치하고,
@@ -462,7 +462,7 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
     ```
 7. 인맥 추천 서버를 만들기 위해서 [API Gateway + Lambda](#api-gateway--lambda)를 참고해서 api gateway와 **RecommendBizcard** 라는 lambda function을 동합한 RESTful API를 생성함
 
-###<a name="references-tips"></a>References & Tips
+### <a name="references-tips"></a>References & Tips
 
 ##### Lambda
 
@@ -534,7 +534,7 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
   > Note: Amazon Kinesis Data Firehose currently doesn't support VPC domains.</strike>
 - [Amazon Kinesis Data Firehose adds support for streaming data delivery to an Amazon Elasticsearch Service domain in an Amazon Virtual Private Cloud (VPC) (2020-04-24)](https://aws.amazon.com/about-aws/whats-new/2020/04/amazon-kinesis-data-firehose-adds-support-for-streaming-data-delivery-to-amazon-elasticsearch-service-in-amazon-vpc/)
 
-###<a name="demo"></a>Demo
+### <a name="demo"></a>Demo
 ##### 명함 이미지를 등록하는 방법
 - **사전 준비 작업**
   1. 다음과 같은 IAM Policy를 갖는 IAM User를 생성함.<br>
