@@ -1,8 +1,6 @@
 # -*- encoding: utf-8 -*-
 # vim: tabstop=2 shiftwidth=2 softtabstop=2 expandtab
 
-import os
-
 from aws_cdk import (
   core,
   aws_ec2,
@@ -24,8 +22,6 @@ from aws_cdk.aws_lambda_event_sources import (
   S3EventSource,
   KinesisEventSource
 )
-
-S3_BUCKET_LAMBDA_LAYER_LIB = os.getenv('S3_BUCKET_LAMBDA_LAYER_LIB', 'octember-resources')
 
 class OctemberBizcardStack(core.Stack):
 
@@ -457,8 +453,10 @@ class OctemberBizcardStack(core.Stack):
     )
     core.Tag.add(es_cfn_domain, 'Name', 'octember-bizcard-es')
 
+    s3_lib_bucket_name = self.node.try_get_context("lib_bucket_name")
+
     #XXX: https://github.com/aws/aws-cdk/issues/1342
-    s3_lib_bucket = s3.Bucket.from_bucket_name(self, id, S3_BUCKET_LAMBDA_LAYER_LIB)
+    s3_lib_bucket = s3.Bucket.from_bucket_name(self, id, s3_lib_bucket_name)
     es_lib_layer = _lambda.LayerVersion(self, "ESLib",
       layer_version_name="es-lib",
       compatible_runtimes=[_lambda.Runtime.PYTHON_3_7],

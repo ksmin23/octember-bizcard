@@ -371,16 +371,25 @@ Lambda Layer에 등록 할 수 있도록 octember-resources라는 이름의 s3 b
     2019-10-30 07:41:07     141534 octember-redis-lib.zip
     ```
 
-3. 소스 코드를 git에서 다운로드 받은 후, `S3_BUCKET_LAMBDA_LAYER_LIB` 라는 환경 변수에 lambda layer에 등록할 패키지가 저장된 s3 bucket 이름을
+3. 소스 코드를 git에서 다운로드 받은 후, **cdk.context.json** 파일에 `lib_bucket_name` 라는 key 값으로 lambda layer에 등록할 패키지가 저장된 s3 bucket 이름을
 설정 한 후, `cdk deploy` 명령어를 이용해서 배포함
 
     ```shell script
     $ git clone https://github.com/ksmin23/octember-bizcard.git
     $ cd octember-bizcard
+    $ cat <<EOF > cdk.context.json
+    > {
+    >   "lib_bucket_name": "octember-resources"
+    > }
+    > EOF
     $ python3 -m venv .env
     $ source .env/bin/activate
     (.env) $ pip install -r requirements.txt
-    (.env) $ S3_BUCKET_LAMBDA_LAYER_LIB=octember-resources cdk --profile=cdk_user deploy
+    (.env) $ cdk context -j
+    {
+      "lib_bucket_name": "octember-resources"
+    }
+    (.env) $ cdk --profile=cdk_user deploy
     ```
 
 4. 배포한 애플리케이션을 삭제하려면, `cdk destroy` 명령어를 아래와 같이 실행
