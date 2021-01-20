@@ -541,15 +541,17 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
 - [AWS Lambda 계층](https://docs.aws.amazon.com/ko_kr/lambda/latest/dg/configuration-layers.html)
 - Lambda Layer에 등록할 Python 패키지 생성 예제
 
-    ```
+    ```shell script
     $ python3 -m venv es-lib # virtual environments을 생성함
     $ cd es-lib
     $ source bin/activate
-    $ mkdir -p python_modules # 필요한 패키지를 저장할 디렉터리 생성
-    $ pip install elasticsearch -t python_modules # 필요한 패키지를 사용자가 지정한 패키지 디렉터리에 저장함
+    (es-lib) $ mkdir -p python_modules # 필요한 패키지를 저장할 디렉터리 생성
+    (es-lib) $ pip install elasticsearch requests requests-aws4auth -t python_modules # 필요한 패키지를 사용자가 지정한 패키지 디렉터리에 저장함
+    (es-lib) $ deactivate
     $ mv python_modules python # 사용자가 지정한 패키지 디렉터리 이름을 python으로 변경함 (python 디렉터리에 패키지를 설치할 경우 에러가 나기 때문에 다른 이름의 디렉터리에 패키지를 설치 후, 디렉터리 이름을 변경함)
     $ zip -r es-lib.zip python/ # 필요한 패키지가 설치된 디렉터리를 압축함
-    $ aws s3 cp es-lib.zip s3://my-lambda-layer-packages/python/ # 압축한 패키지를 s3에 업로드 한 후, lambda layer에 패키지를 등록할 때, s3 위치를 등록하면 됨
+    $ aws s3 mb s3://my-bucket-for-lambda-layer-packages # 압축한 패키지를 업로드할 s3 bucket을 생성함
+    $ aws s3 cp es-lib.zip s3://my-bucket-for-lambda-layer-packages/python/ # 압축한 패키지를 s3에 업로드 한 후, lambda layer에 패키지를 등록할 때, s3 위치를 등록하면 됨
     ```
 
 ##### API Gateway + S3
