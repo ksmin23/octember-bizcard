@@ -2,10 +2,9 @@
 # -*- encoding: utf-8 -*-
 # vim: tabstop=2 shiftwidth=2 softtabstop=2 expandtab
 
-import os
+import pretty_errors
 
 from aws_cdk import core
-
 from octember_bizcard.octember_bizcard_stack import OctemberBizcardStack
 
 app = core.App()

@@ -1,18 +1,18 @@
 # pip install aws-cdk
-aws-cdk.core==1.51.0
-aws-cdk.aws-ec2==1.51.0
-aws-cdk.aws-apigateway==1.51.0
-aws-cdk.aws-iam==1.51.0
-aws-cdk.aws-lambda==1.51.0
-aws-cdk.aws-lambda-event-sources==1.51.0
-aws-cdk.aws-s3==1.51.0
-aws-cdk.aws-kinesis==1.51.0
-aws-cdk.aws-dynamodb==1.51.0
-aws-cdk.aws-elasticsearch==1.51.0
-aws-cdk.aws-kinesisfirehose==1.51.0
-aws-cdk.aws-elasticache==1.51.0
-aws-cdk.aws-neptune==1.51.0
-aws-cdk.aws-sagemaker==1.51.0
+aws-cdk.core==1.85.0
+aws-cdk.aws-ec2==1.85.0
+aws-cdk.aws-apigateway==1.85.0
+aws-cdk.aws-iam==1.85.0
+aws-cdk.aws-lambda==1.85.0
+aws-cdk.aws-lambda-event-sources==1.85.0
+aws-cdk.aws-s3==1.85.0
+aws-cdk.aws-kinesis==1.85.0
+aws-cdk.aws-dynamodb==1.85.0
+aws-cdk.aws-elasticsearch==1.85.0
+aws-cdk.aws-kinesisfirehose==1.85.0
+aws-cdk.aws-elasticache==1.85.0
+aws-cdk.aws-neptune==1.85.0
+aws-cdk.aws-sagemaker==1.85.0
 
 # pip install elasticsearch
 elasticsearch==7.0.5
@@ -26,3 +26,6 @@ tornado==4.5.3
 
 # pip install redis
 redis==3.3.11
+
+# misc
+pretty-errors==1.2.19

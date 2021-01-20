@@ -1,6 +1,8 @@
 # -*- encoding: utf-8 -*-
 # vim: tabstop=2 shiftwidth=2 softtabstop=2 expandtab
 
+import pretty_errors
+
 from aws_cdk import (
   core,
   aws_ec2,
@@ -376,7 +378,7 @@ class OctemberBizcardStack(core.Stack):
       description='security group for octember bizcard elasticsearch client',
       security_group_name='use-octember-bizcard-es'
     )
-    core.Tag.add(sg_use_bizcard_es, 'Name', 'use-octember-bizcard-es')
+    core.Tags.of(sg_use_bizcard_es).add('Name', 'use-octember-bizcard-es')
 
     sg_bizcard_es = aws_ec2.SecurityGroup(self, "BizcardSearchSG",
       vpc=vpc,
@@ -384,7 +386,7 @@ class OctemberBizcardStack(core.Stack):
       description='security group for octember bizcard elasticsearch',
       security_group_name='octember-bizcard-es'
     )
-    core.Tag.add(sg_bizcard_es, 'Name', 'octember-bizcard-es')
+    core.Tags.of(sg_bizcard_es).add('Name', 'octember-bizcard-es')
 
     sg_bizcard_es.add_ingress_rule(peer=sg_bizcard_es, connection=aws_ec2.Port.all_tcp(), description='octember-bizcard-es')
     sg_bizcard_es.add_ingress_rule(peer=sg_use_bizcard_es, connection=aws_ec2.Port.all_tcp(), description='use-octember-bizcard-es')
@@ -395,7 +397,7 @@ class OctemberBizcardStack(core.Stack):
       description='security group for bastion host',
       security_group_name='octember-bastion-host-sg'
     )
-    core.Tag.add(sg_ssh_access, 'Name', 'octember-bastion-host')
+    core.Tags.of(sg_ssh_access).add('Name', 'octember-bastion-host')
     sg_ssh_access.add_ingress_rule(peer=aws_ec2.Peer.any_ipv4(), connection=aws_ec2.Port.tcp(22), description='ssh access')
 
     bastion_host = aws_ec2.BastionHostLinux(self, "BastionHost",
@@ -451,7 +453,7 @@ class OctemberBizcardStack(core.Stack):
         "subnetIds": vpc.select_subnets(subnet_type=aws_ec2.SubnetType.PRIVATE).subnet_ids
       }
     )
-    core.Tag.add(es_cfn_domain, 'Name', 'octember-bizcard-es')
+    core.Tags.of(es_cfn_domain).add('Name', 'octember-bizcard-es')
 
     s3_lib_bucket_name = self.node.try_get_context("lib_bucket_name")
 
@@ -572,7 +574,7 @@ class OctemberBizcardStack(core.Stack):
       description='security group for octember bizcard search query cache client',
       security_group_name='use-octember-bizcard-es-cache'
     )
-    core.Tag.add(sg_use_bizcard_es_cache, 'Name', 'use-octember-bizcard-es-cache')
+    core.Tags.of(sg_use_bizcard_es_cache).add('Name', 'use-octember-bizcard-es-cache')
 
     sg_bizcard_es_cache = aws_ec2.SecurityGroup(self, "BizcardSearchCacheSG",
       vpc=vpc,
@@ -580,7 +582,7 @@ class OctemberBizcardStack(core.Stack):
       description='security group for octember bizcard search query cache',
       security_group_name='octember-bizcard-es-cache'
     )
-    core.Tag.add(sg_bizcard_es_cache, 'Name', 'octember-bizcard-es-cache')
+    core.Tags.of(sg_bizcard_es_cache).add('Name', 'octember-bizcard-es-cache')
 
     sg_bizcard_es_cache.add_ingress_rule(peer=sg_use_bizcard_es_cache, connection=aws_ec2.Port.tcp(6379), description='use-octember-bizcard-es-cache')
 
@@ -661,7 +663,7 @@ class OctemberBizcardStack(core.Stack):
       description='security group for octember bizcard graph db client',
       security_group_name='use-octember-bizcard-neptune'
     )
-    core.Tag.add(sg_use_bizcard_graph_db, 'Name', 'use-octember-bizcard-neptune')
+    core.Tags.of(sg_use_bizcard_graph_db).add('Name', 'use-octember-bizcard-neptune')
 
     sg_bizcard_graph_db = aws_ec2.SecurityGroup(self, "BizcardGraphDbSG",
       vpc=vpc,
@@ -669,7 +671,7 @@ class OctemberBizcardStack(core.Stack):
       description='security group for octember bizcard graph db',
       security_group_name='octember-bizcard-neptune'
     )
-    core.Tag.add(sg_bizcard_graph_db, 'Name', 'octember-bizcard-neptune')
+    core.Tags.of(sg_bizcard_graph_db).add('Name', 'octember-bizcard-neptune')
 
     sg_bizcard_graph_db.add_ingress_rule(peer=sg_bizcard_graph_db, connection=aws_ec2.Port.tcp(8182), description='octember-bizcard-neptune')
     sg_bizcard_graph_db.add_ingress_rule(peer=sg_use_bizcard_graph_db, connection=aws_ec2.Port.tcp(8182), description='use-octember-bizcard-neptune')
@@ -751,7 +753,7 @@ class OctemberBizcardStack(core.Stack):
       description='security group for octember bizcard recommendation query cache client',
       security_group_name='use-octember-bizcard-neptune-cache'
     )
-    core.Tag.add(sg_use_bizcard_neptune_cache, 'Name', 'use-octember-bizcard-es-cache')
+    core.Tags.of(sg_use_bizcard_neptune_cache).add('Name', 'use-octember-bizcard-es-cache')
 
     sg_bizcard_neptune_cache = aws_ec2.SecurityGroup(self, "BizcardNeptuneCacheSG",
       vpc=vpc,
@@ -759,7 +761,7 @@ class OctemberBizcardStack(core.Stack):
       description='security group for octember bizcard recommendation query cache',
       security_group_name='octember-bizcard-neptune-cache'
     )
-    core.Tag.add(sg_bizcard_neptune_cache, 'Name', 'octember-bizcard-neptune-cache')
+    core.Tags.of(sg_bizcard_neptune_cache).add('Name', 'octember-bizcard-neptune-cache')
 
     sg_bizcard_neptune_cache.add_ingress_rule(peer=sg_use_bizcard_neptune_cache, connection=aws_ec2.Port.tcp(6379), description='use-octember-bizcard-neptune-cache')
 
