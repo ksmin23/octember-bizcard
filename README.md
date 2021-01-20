@@ -6,7 +6,7 @@
 1. [Architecture](#architecture)
 2. [RESTful API Specification](#restful-api-spec)
 3. [Lambda Functions Overview](#lambda-fn-overview)
-4. [How To Build & Deploy](#how-to-deploy)
+4. [Build & Deploy](#how-to-deploy)
 5. [References & Tips](#references-tips)
 6. [Limits](#limits)
 7. [Demo](#demo)
@@ -370,7 +370,7 @@
 ##### Prerequisites
 1. [Getting Started With the AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html)를 참고해서 cdk를 설치하고,
 cdk를 실행할 때 사용할 IAM User를 생성한 후, `~/.aws/config`에 등록함
-예를 들어서, cdk_user라는 IAM User를 생성 한 후, 아래와 같이 `~/.aws/config`에 추가로 등록함
+예를 들어서, cdk_user라는 **AdministratorAccess** 권한을 갖는 IAM User를 생성 한 후, 아래와 같이 `~/.aws/config`에 추가로 등록함
 
     ```shell script
     $ cat ~/.aws/config
@@ -407,10 +407,34 @@ Lambda Layer에 등록 할 수 있도록 octember-resources라는 이름의 s3 b
     $ python3 -m venv .env
     $ source .env/bin/activate
     (.env) $ pip install -r requirements.txt
+    (.env) $ cdk --version
+    1.85.0 (build 5f44668)
     (.env) $ cdk context -j
     {
       "lib_bucket_name": "octember-resources"
     }
+    (.env) $ cdk --profile=cdk_user synth
+      Resources:
+        OctemberVPC04CAC20C:
+          Type: AWS::EC2::VPC
+          Properties:
+            CidrBlock: 10.0.0.0/16
+            EnableDnsHostnames: true
+            EnableDnsSupport: true
+            InstanceTenancy: default
+
+      ......
+
+        AssetParametersa05ca8352deadc2f1972c4fb21555d99120d0510cccb81d30b285153803df7ddS3VersionKey52AC24C7:
+          Type: String
+          Description: S3 key for asset version "a05ca8352deadc2f1972c4fb21555d99120d0510cccb81d30b285153803df7dd"
+        AssetParametersa05ca8352deadc2f1972c4fb21555d99120d0510cccb81d30b285153803df7ddArtifactHashEF43BE8F:
+          Type: String
+          Description: Artifact hash for asset "a05ca8352deadc2f1972c4fb21555d99120d0510cccb81d30b285153803df7dd"
+        SsmParameterValueawsserviceamiamazonlinuxlatestamzn2amihvmx8664gp2C96584B6F00A464EAD1953AFF4B05118Parameter:
+          Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+          Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
     (.env) $ cdk --profile=cdk_user deploy
     ```
 
@@ -418,6 +442,14 @@ Lambda Layer에 등록 할 수 있도록 octember-resources라는 이름의 s3 b
     ```shell script
     (.env) $ cdk --profile=cdk_user destroy
     ```
+
+##### Useful CDK commands
+
+ * `cdk ls`          list all stacks in the app
+ * `cdk synth`       emits the synthesized CloudFormation template
+ * `cdk deploy`      deploy this stack to your default AWS account/region
+ * `cdk diff`        compare deployed stack with current state
+ * `cdk docs`        open CDK documentation
 
 \[[Top](#Top)\]
 
