@@ -1,14 +1,15 @@
-# Octember<sup>TM</sup>
+# <a name="top"></a>Octember<sup>TM</sup>
 
 - OCR(Optical Character Reconition) 기술을 활용한 명함 관리 및 Graph database(Neptune)을 이용한 인맥 추천 서비스
 
 ## Table of Contents
-* [Architecture](#architecture)
-* [RESTful API Specification](#restful-api-spec)
-* [Lambda Functions Overview](#lambda-fn-overview)
-* [How To Build & Deploy](#how-to-deploy)
-* [References & Tips](#references-tips)
-* [Demo](#demo)
+1. [Architecture](#architecture)
+2. [RESTful API Specification](#restful-api-spec)
+3. [Lambda Functions Overview](#lambda-fn-overview)
+4. [How To Build & Deploy](#how-to-deploy)
+5. [References & Tips](#references-tips)
+6. [Limits](#limits)
+7. [Demo](#demo)
 
 ### <a name="architecture"></a>Architecture
 ![octember-architecture](octember-arch.png)
@@ -24,6 +25,8 @@
 - Neptune (Graph database)
 - Textract
 - S3
+
+\[[Top](#Top)\]
 
 ### <a name="restful-api-spec"></a>RESTful API Specification
 ##### Image upload
@@ -46,6 +49,8 @@
 
 - Response
   - No Data
+
+\[[Top](#Top)\]
 
 ##### Search
 - Request
@@ -141,6 +146,8 @@
     ]
     ```
 
+\[[Top](#Top)\]
+
 ##### PYMK(People You May Know)
 - Request
   - GET
@@ -193,7 +200,7 @@
         },
         {
             "name": [
-                "Joon Kim"
+                "Foo Kim"
             ],
             "phone_number": [
                 "(+82 10) 7315 3970 "
@@ -205,12 +212,14 @@
                 "Partner Solutions Architect"
             ],
             "email": [
-                "joon@amazon.com"
+                "foo@amazon.com"
             ],
             "score": 3.0
         }
     ]
     ```
+
+\[[Top](#Top)\]
 
 ### <a name="lambda-fn-overview"></a>Lambda Functions Overview
 
@@ -222,6 +231,8 @@
 | UpsertBizcardToGraphDB | biz card의 text 데이터를 graph database에 load 하는 작업  | Kinesis Data Stream | Kinesis Data Stream Read | | ETL |
 | SearchBizcard | biz card를 검색하기 위한 검색 서버 | API Gateway | | | Proxy Server |
 | RecommendBizcard | PYMK(People You May Know)를 추천해주는 서버 | API Gateway | | | Proxy Server |
+
+\[[Top](#Top)\]
 
 ### Data Specification
 
@@ -270,6 +281,8 @@
        }
        ```
 
+\[[Top](#Top)\]
+
 ##### `UpsertBizcardToES` In/Output Data
 - Input
   - `GetTextFromS3Image` output data 참고
@@ -305,11 +318,15 @@
        }
        ```
 
+\[[Top](#Top)\]
+
 ##### `UpsertBizcardToGraphDB` In/Output Data
 - Input
   - `GetTextFromS3Image` output data 참고
 - Output
   - Neptune Schema 참고
+
+\[[Top](#Top)\]
 
 ##### S3 Bucket 및 Directory 구조
 
@@ -319,12 +336,16 @@
 | {bucket name} | bizcard-by-user/{user_id} | 업로드된 biz card image를 사용자별로 별도로 보관하는 저장소 |
 | {bucket name} | bizcard-text/{YYYY}/{mm}/{dd}/{HH} | biz card image에서 추출한 text 데이터 저장소; 검색을 위한 재색인 및 배치 형태의 텍스트 분석을 위한 백업 저장소 |
 
+\[[Top](#Top)\]
+
 ##### DynamoDB Schema
 
 | primary key(partition key) | s3_bucket | s3_key | mts | status |
 |----------------------------|-----------|--------|-----|--------|
 | {user_id}_{image_id}.jpg | s3 bucket | s3 object key | last modified time(yyyymmddHHMMSS) | processing status {START, PROCESSING, END} |
 | foobar_i592134.jpg | octember-use1 | bizcard-raw-img/foobar_i592134.jpg | 20191025011254 | END |
+
+\[[Top](#Top)\]
 
 ##### Neptune Schema
 
@@ -342,6 +363,7 @@
 | knows | weight | biz card를 주고 받은 사람들 간의 관계 (weight: 관계의 중요도) |
 | knows | {"weight": 1.0} | |
 
+\[[Top](#Top)\]
 
 ### <a name="how-to-deploy"></a>How To Build & Deploy
 #### (1) aws cdk를 사용하는 방법
@@ -397,6 +419,8 @@ Lambda Layer에 등록 할 수 있도록 octember-resources라는 이름의 s3 b
     (.env) $ cdk --profile=cdk_user destroy
     ```
 
+\[[Top](#Top)\]
+
 #### (2) aws 웹 console을 사용하는 방법
 ##### Image upload
 1. s3 bucket을 생성함; 예를 들어서 **us-east-1** 리전에 **octember-use1** 라는 이름의 bucket을 생성함
@@ -427,6 +451,8 @@ Lambda Layer에 등록 할 수 있도록 octember-resources라는 이름의 s3 b
     DDB_TABLE_NAME=OctemberBizcardImg
     ```
 
+\[[Top](#Top)\]
+
 ##### Search
 1. [Elasticsearch Service](#elasticsearch-service)를 참고해서 VPC 내에 **octember** 라는 domain 이름으로 Elasticsearch cluster를 생성함
 2. [Kinesis Data Firehorse](#kinesis-data-firehorse)를 참고해서 Source를 **octember-bizcard-text**, Destination을 s3 bucket(예: **octember-use1**)으로 설정함<br/>
@@ -450,7 +476,9 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
     ```
 8. 검색 서버를 만들기 위해서 [API Gateway + Lambda](#api-gateway--lambda)를 참고해서 api gateway와 **SearchBizcard** 라는 lambda function을 동합한 RESTful API를 생성함
 
-##### PYMK
+\[[Top](#Top)\]
+
+##### PYMK(People You May Know)
 1. [Neptune](#neptune)를 참고해서 VPC 내에 **octember-bizcard** 라는 이름의 graph database를 생성함
 2. [Lambda](#lambda)를 참고해서 **UpsertBizcardToGraphDB** 라는 lambda function을 생성하고, **UpsertBizcardToGraphDB** 디렉터리 내의 소스 코드를 복사해서 lambda function code에 등록함
 3. **UpsertBizcardToGraphDB** 생성 시, REGION_NAME, NEPTUNE_ENDPOINT 등의 환경 변수에 리전 이름, Neptune endpoint 주소를 알맞게 설정함<br/>
@@ -470,6 +498,8 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
     ELASTICACHE_HOST=octember-neptune-cache.2rb5x2.0001.use1.cache.amazonaws.com
     ```
 7. 인맥 추천 서버를 만들기 위해서 [API Gateway + Lambda](#api-gateway--lambda)를 참고해서 api gateway와 **RecommendBizcard** 라는 lambda function을 동합한 RESTful API를 생성함
+
+\[[Top](#Top)\]
 
 ### <a name="references-tips"></a>References & Tips
 
@@ -536,12 +566,16 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
   + [Amazon S3에 대한 엔드포인트](https://docs.aws.amazon.com/ko_kr/vpc/latest/userguide/vpc-endpoints-s3.html)
   + [Amazon DynamoDB에 대한 엔드포인트](https://docs.aws.amazon.com/ko_kr/vpc/latest/userguide/vpc-endpoints-ddb.html)
 
-### Limits
+\[[Top](#Top)\]
+
+### <a name="limits"></a>Limits
 - Amazon Textract 서비스가 지원하는 언어가 제한적이기 때문에 확인 후 사용이 필요함 (한국어는 현재 2019-11-11 까지 지원되지 않고 있음)
 - 명함 이미지(jpeg/png) 크기는 5MB 작거나 같아야 함
 - <strike>Amazon Kinesis Data Firehose는 현재 (2019-11-11) VPC 내에 있는 Elasticsearch domains에 데이터를 loading 하는 것은 지원 하지 않음
   > Note: Amazon Kinesis Data Firehose currently doesn't support VPC domains.</strike>
 - [Amazon Kinesis Data Firehose adds support for streaming data delivery to an Amazon Elasticsearch Service domain in an Amazon Virtual Private Cloud (VPC) (2020-04-24)](https://aws.amazon.com/about-aws/whats-new/2020/04/amazon-kinesis-data-firehose-adds-support-for-streaming-data-delivery-to-amazon-elasticsearch-service-in-amazon-vpc/)
+
+\[[Top](#Top)\]
 
 ### <a name="demo"></a>Demo
 ##### 명함 이미지를 등록하는 방법
@@ -614,6 +648,8 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
   4. 전송할 이미지 파일이 추가한 후, Send 버튼을 눌러서 PUT 메소드를 실행함<br/>
   ![octember-bizcard-img-uploader-02](resources/octember-bizcard-img-uploader-04.png)
 
+\[[Top](#Top)\]
+
 ##### Demo Scenario
 
 1. Octember<sup>TM</sup> 사용자별로 자신의 명함 이미지를 하나씩 등록함;<br/>
@@ -629,3 +665,6 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
 ![demo-octember-bizcard-search.png](resources/demo-octember-bizcard-search.png)
 5. 인맥 추천 api를 이용해서 Octember<sup>TM</sup> 회원에게 추천할 만한 사람을 찾아봄
 ![demo-octember-bizcard-pymk.png](resources/demo-octember-bizcard-pymk.png)
+
+\[[Top](#Top)\]
+
