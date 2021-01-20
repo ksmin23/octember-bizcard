@@ -539,7 +539,7 @@ s3 destination의 prefix를 `bizcard-text/` 로 설정함
 
 - [자습서: Amazon S3과 함께 AWS Lambda 사용](https://docs.aws.amazon.com/ko_kr/lambda/latest/dg/with-s3-example.html)
 - [AWS Lambda 계층](https://docs.aws.amazon.com/ko_kr/lambda/latest/dg/configuration-layers.html)
-- Lambda Layer에 등록할 Python 패키지 생성 예제
+- Lambda Layer에 등록할 Elasticsearch Python 패키지 생성 예제
 
     ```shell script
     $ python3 -m venv es-lib # virtual environments을 생성함
